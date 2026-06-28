@@ -1,0 +1,6 @@
+{
+  "name": "MedLink Yemen",
+  "description": "منصة تربط موردي الأدوية بالمستشفيات في اليمن (MedLink Yemen connects medicine suppliers with hospitals in Yemen).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
