@@ -15,12 +15,52 @@ object FirebaseService {
     }
 
     // --- Fallback memory data vectors for fluent Offline Demonstration ---
+    val fallbackCompany = CompanyInfo(
+        companyId = "main_company",
+        companyName = "مجموعة الشفاء للأدوية والمستلزمات الطبية",
+        companyNameEn = "Al-Shefa Medical Group",
+        phone = "+967 1 234567",
+        email = "info@alshefa-yemen.com",
+        mainAddress = "صنعاء - شارع حدة - بجانب وزارة الصحة",
+        licenseNumber = "MOH-2020-0045",
+        totalBranches = 6
+    )
+
+    val fallbackBranches = listOf(
+        Branch("branch_sanaa", "فرع صنعاء الرئيسي", "صنعاء", "صنعاء", "صنعاء - الحصبة", "771111111", "manager_1", "أحمد محمد الحميدي", "771111112", 15.3482, 44.2191, true),
+        Branch("branch_aden", "فرع عدن", "عدن", "عدن", "عدن - خورمكسر", "733222222", "manager_2", "فيصل علي البكري", "733222223", 12.8021, 45.0312, true),
+        Branch("branch_taiz", "فرع تعز", "تعز", "تعز", "تعز - الحوبان", "711333333", "manager_3", "محمد عبدالله السلامي", "711333334", 13.5784, 44.0217, true),
+        Branch("branch_hadramout", "فرع حضرموت", "حضرموت", "المكلا", "المكلا - شارع البحر", "701444444", "manager_4", "خالد عمر الكثيري", "701444445", 14.5403, 49.1293, true),
+        Branch("branch_hodeidah", "فرع الحديدة", "الحديدة", "الحديدة", "الحديدة - شارع علي عبدالمغني", "775555555", "manager_5", "عبدالرحمن يحيى الزيدي", "775555556", 14.7978, 42.9547, true),
+        Branch("branch_ibb", "فرع إب", "إب", "إب", "إب - شارع الجمهورية", "770666666", "manager_6", "سالم حسن الأنسي", "770666667", 13.9764, 44.1773, true)
+    )
+
     val fallbackUsers = mutableListOf<User>(
-        User("hosp_1", "مستشفى الثورة بصنعاء", "thawra@yemen.org", "hospital", "صنعاء", "771122334", "هيئة مستشفى الثورة العام"),
-        User("hosp_2", "مستشفى الجمهورية بعدن", "jomhoria@yemen.org", "hospital", "عدن", "733344556", "مستشفى الجمهورية التعليمي"),
-        User("sup_1", "الشركة العالمية للأدوية", "global@yemen.org", "supplier", "صنعاء", "775566778", "العالمية للأدوية والمستلزمات"),
-        User("sup_2", "مجموعة الكندي الدوائية", "alkindi@yemen.org", "supplier", "عدن", "711222333", "الكندي للاستيراد والتوزيع"),
-        User("sup_3", "الشركة اليمنية لصناعة الأدوية (يدكو)", "yedco@yemen.org", "supplier", "صنعاء", "777888999", "YEDCO Pharma Ltd")
+        User("director_1", "المدير العام - سعيد ناصر", "director@alshefa.com", "company_director", "", "صنعاء", "صنعاء", "777000001", "مجموعة الشفاء للأدوية"),
+        User("manager_1", "أحمد محمد الحميدي", "sanaa@alshefa.com", "branch_manager", "", "صنعاء", "صنعاء", "771111112", "مجموعة الشفاء", "branch_sanaa", "فرع صنعاء الرئيسي", true, true),
+        User("manager_2", "فيصل علي البكري", "aden@alshefa.com", "branch_manager", "", "عدن", "عدن", "733222223", "مجموعة الشفاء", "branch_aden", "فرع عدن", true, true),
+        User("client_1", "مستشفى الثورة العام", "thawra@hospital.com", "client", "hospital", "صنعاء", "صنعاء", "771122334", "مستشفى الثورة"),
+        User("client_2", "صيدلية النور المركزية", "alnoor@pharmacy.com", "client", "pharmacy", "عدن", "عدن", "733344556", "صيدلية النور")
+    )
+
+    val fallbackBranchOffers = mutableListOf<BranchOffer>(
+        BranchOffer(
+            offerId = "offer_sanaa_1",
+            orderId = "order_sample_1",
+            branchId = "branch_sanaa",
+            branchName = "فرع صنعاء الرئيسي",
+            managerId = "manager_1",
+            managerName = "أحمد محمد الحميدي",
+            offerDetails = "علب أموكسيسيلين متوفرة بالكامل مع تسليم خلال يومين",
+            totalPrice = 120000.0,
+            currency = "YER",
+            deliveryDays = 2,
+            shippingCost = 5000.0,
+            paymentTerms = "سداد نقدي عند الاستلام أو تحويل كريمي",
+            notes = "عرض خاص بمستشفى الثورة العام",
+            status = "pending",
+            createdAt = System.currentTimeMillis()
+        )
     )
 
     val fallbackAddresses = mutableListOf<UserAddress>(
@@ -60,11 +100,94 @@ object FirebaseService {
         DeliverySchedule("sched_1", "order_1", listOf("2026-06-10T10:00:00", "2026-06-11T14:30:00"), listOf("2026-06-10T12:00:00", "2026-06-12T09:00:00"), "2026-06-10T12:00:00", "agreed", System.currentTimeMillis())
     )
     val fallbackOrders = mutableListOf<Order>(
-        Order("order_1", "offer_1", "hosp_1", "sup_1", "Amoxicillin 500mg", 3.2, 500, "self", "paid", "2026-06-10T12:00:00", System.currentTimeMillis())
+        Order(
+            orderId = "order_1",
+            priceOfferId = "offer_1",
+            hospitalId = "hosp_1",
+            supplierId = "sup_1",
+            medicineName = "Amoxicillin 500mg",
+            price = 3.2,
+            quantity = 500,
+            deliveryMethod = "self",
+            status = "paid",
+            deliveryScheduledDate = "2026-06-10T12:00:00",
+            createdAt = System.currentTimeMillis()
+        )
     )
 
+    val fallbackClientProfiles = mutableListOf<ClientProfile>(
+        ClientProfile(
+            clientId = "profile_client_1",
+            userId = "client_1",
+            institutionName = "مستشفى الثورة العام",
+            clientType = "hospital",
+            responsiblePerson = "د. جمال الشامي",
+            phone = "771122334",
+            alternatePhone = "771122335",
+            licenseNumber = "MOH-HOSP-991",
+            licenseImageUrl = "https://images.unsplash.com/photo-1576091160550-2173dba999ef",
+            governorate = "صنعاء",
+            city = "صنعاء",
+            district = "الصافية",
+            neighborhood = "حي الاستاد",
+            landmark = "ملعب الثورة",
+            fullAddress = "صنعاء - الصافية - بجانب ملعب الثورة",
+            latitude = 15.3482,
+            longitude = 44.2191,
+            assignedBranchId = "branch_sanaa",
+            assignedBranchName = "فرع صنعاء الرئيسي",
+            preferredPayment = "تحويل بنكي",
+            paymentAccount = "الكريمي - 320111",
+            isVerified = true,
+            isActive = true,
+            profileCompleted = true,
+            joinedAt = System.currentTimeMillis() - 86400000 * 10
+        ),
+        ClientProfile(
+            clientId = "profile_client_2",
+            userId = "client_2",
+            institutionName = "صيدلية النور المركزية",
+            clientType = "pharmacy",
+            responsiblePerson = "صيدلي أحمد العليمي",
+            phone = "733344556",
+            alternatePhone = "",
+            licenseNumber = "MOH-PHAR-442",
+            licenseImageUrl = "https://images.unsplash.com/photo-1576091160550-2173dba999ef",
+            governorate = "عدن",
+            city = "عدن",
+            district = "خور مكسر",
+            neighborhood = "حي الجمهورية",
+            landmark = "ساحة العروض",
+            fullAddress = "عدن - خور مكسر - الشارع العام",
+            latitude = 12.8021,
+            longitude = 45.0312,
+            assignedBranchId = "branch_aden",
+            assignedBranchName = "فرع عدن",
+            preferredPayment = "كاش",
+            paymentAccount = "",
+            isVerified = true,
+            isActive = true,
+            profileCompleted = true,
+            joinedAt = System.currentTimeMillis() - 86400000 * 5
+        )
+    )
+    val fallbackBranchManagerProfiles = mutableListOf<BranchManagerProfile>(
+        BranchManagerProfile(
+            userId = "manager_1",
+            fullName = "أحمد محمد الحميدي",
+            phone = "771111112",
+            nationalIdImageUrl = "https://images.unsplash.com/photo-1580489944761-15a19d654956",
+            warehouseLat = 15.3482,
+            warehouseLng = 44.2191,
+            profileCompleted = true,
+            joinedAt = System.currentTimeMillis() - 86400000 * 30
+        )
+    )
+    val fallbackOrderRoutings = mutableListOf<OrderRouting>()
+    val fallbackDirectorNotifications = mutableListOf<DirectorNotification>()
+
     // Current Local User Simulation Session
-    var currentUserSession: User = fallbackUsers[0] // Default is Hospital Thawra
+    var currentUserSession: User = fallbackUsers[3] // Default is client_1 (مستشفى الثورة العام)
 
     // --- Authentication ---
     fun getCurrentUser(onResult: (User?) -> Unit) {
@@ -95,16 +218,24 @@ object FirebaseService {
             onResult(user, null)
         } else {
             // Self-register a mock user based on email type to facilitate effortless testing
-            val isHospital = email.contains("hosp") || email.contains("hospital")
-            val role = if (isHospital) "hospital" else "supplier"
+            val isClient = email.contains("hosp") || email.contains("hospital") || email.contains("pharmacy") || email.contains("client")
+            val isDirector = email.contains("director") || email.contains("admin")
+            val role = when {
+                isDirector -> "company_director"
+                isClient -> "client"
+                else -> "branch_manager"
+            }
             val newMockUser = User(
                 userId = "user_mock_" + System.currentTimeMillis(),
                 name = email.substringBefore("@").replaceFirstChar { it.uppercase() },
                 email = email,
                 role = role,
+                clientType = if (email.contains("pharmacy")) "pharmacy" else "hospital",
                 city = "صنعاء",
                 phone = "770000000",
-                orgName = if (isHospital) "منشأة استشفائية تجريبية" else "مورد خدمات دوائية تجريبي"
+                orgName = if (isClient) "منشأة تجريبية للعميل" else "مجموعة الشفاء للأدوية",
+                branchId = if (role == "branch_manager") "branch_sanaa" else "",
+                branchName = if (role == "branch_manager") "فرع صنعاء الرئيسي" else ""
             )
             fallbackUsers.add(newMockUser)
             currentUserSession = newMockUser
@@ -418,6 +549,60 @@ object FirebaseService {
         }
     }
 
+    fun getCompanyInfo(onResult: (CompanyInfo) -> Unit) {
+        onResult(fallbackCompany)
+    }
+
+    fun getBranches(onResult: (List<Branch>) -> Unit) {
+        onResult(fallbackBranches)
+    }
+
+    fun submitOrder(order: Order, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        val finalOrder = order.copy(
+            orderId = if (order.orderId.isEmpty()) "order_" + System.currentTimeMillis() else order.orderId,
+            createdAt = if (order.createdAt == 0L) System.currentTimeMillis() else order.createdAt
+        )
+        fallbackOrders.add(finalOrder)
+        onSuccess()
+    }
+
+    fun getBranchOffersForOrder(orderId: String, onResult: (List<BranchOffer>) -> Unit) {
+        onResult(fallbackBranchOffers.filter { it.orderId == orderId })
+    }
+
+    fun getAllBranchOffers(onResult: (List<BranchOffer>) -> Unit) {
+        onResult(fallbackBranchOffers)
+    }
+
+    fun submitBranchOffer(offer: BranchOffer, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        val finalOffer = offer.copy(
+            offerId = if (offer.offerId.isEmpty()) "offer_" + System.currentTimeMillis() else offer.offerId,
+            createdAt = if (offer.createdAt == 0L) System.currentTimeMillis() else offer.createdAt
+        )
+        fallbackBranchOffers.add(finalOffer)
+        // Automatically update order status to indicate offer received
+        val oIdx = fallbackOrders.indexOfFirst { it.orderId == offer.orderId }
+        if (oIdx != -1) {
+            fallbackOrders[oIdx] = fallbackOrders[oIdx].copy(status = "offer_received")
+        }
+        onSuccess()
+    }
+
+    fun updateBranchOfferStatus(offerId: String, newStatus: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        val idx = fallbackBranchOffers.indexOfFirst { it.offerId == offerId }
+        if (idx != -1) {
+            fallbackBranchOffers[idx] = fallbackBranchOffers[idx].copy(status = newStatus)
+            if (newStatus == "accepted") {
+                // Confirm the order as well
+                val oIdx = fallbackOrders.indexOfFirst { it.orderId == fallbackBranchOffers[idx].orderId }
+                if (oIdx != -1) {
+                    fallbackOrders[oIdx] = fallbackOrders[oIdx].copy(status = "confirmed")
+                }
+            }
+        }
+        onSuccess()
+    }
+
     // --- Haversine Mathematics with Fallback Lookup ---
     val cityCoordinatesMap = mapOf(
         "صنعاء" to Pair(15.3482, 44.2191),
@@ -444,5 +629,173 @@ object FirebaseService {
         }
         // Round to 1 decimal place
         return Math.round(distance * 10.0) / 10.0
+    }
+
+    // --- SMART ONBOARDING & ROUTING SERVICES ---
+
+    fun setupClientProfile(profile: ClientProfile, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        val finalProfile = profile.copy(
+            clientId = if (profile.clientId.isEmpty()) "client_" + System.currentTimeMillis() else profile.clientId,
+            joinedAt = System.currentTimeMillis(),
+            profileCompleted = true
+        )
+        val idx = fallbackClientProfiles.indexOfFirst { it.userId == profile.userId }
+        if (idx != -1) {
+            fallbackClientProfiles[idx] = finalProfile
+        } else {
+            fallbackClientProfiles.add(finalProfile)
+        }
+
+        // Also update User profile in fallbackUsers to profileCompleted
+        val userIdx = fallbackUsers.indexOfFirst { it.userId == profile.userId }
+        if (userIdx != -1) {
+            fallbackUsers[userIdx] = fallbackUsers[userIdx].copy(
+                isVerified = finalProfile.isVerified,
+                orgName = finalProfile.institutionName,
+                phone = finalProfile.phone,
+                city = finalProfile.city,
+                governorate = finalProfile.governorate
+            )
+        }
+
+        // Send Notification to Director
+        val notification = DirectorNotification(
+            notificationId = "notif_" + System.currentTimeMillis(),
+            title = "انضمام عميل جديد",
+            message = "انضم عميل جديد: ${finalProfile.institutionName} في محافظة ${finalProfile.governorate}",
+            clientId = finalProfile.clientId,
+            clientName = finalProfile.institutionName,
+            createdAt = System.currentTimeMillis()
+        )
+        fallbackDirectorNotifications.add(notification)
+
+        onSuccess()
+    }
+
+    fun setupBranchManagerProfile(profile: BranchManagerProfile, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        val finalProfile = profile.copy(
+            profileCompleted = true,
+            joinedAt = System.currentTimeMillis()
+        )
+        val idx = fallbackBranchManagerProfiles.indexOfFirst { it.userId == profile.userId }
+        if (idx != -1) {
+            fallbackBranchManagerProfiles[idx] = finalProfile
+        } else {
+            fallbackBranchManagerProfiles.add(finalProfile)
+        }
+
+        // Also update User profile in fallbackUsers
+        val userIdx = fallbackUsers.indexOfFirst { it.userId == profile.userId }
+        if (userIdx != -1) {
+            fallbackUsers[userIdx] = fallbackUsers[userIdx].copy(
+                phone = finalProfile.phone,
+                name = finalProfile.fullName
+            )
+        }
+        onSuccess()
+    }
+
+    fun smartRouteOrder(
+        order: Order,
+        clientGovernorate: String,
+        clientLat: Double,
+        clientLng: Double,
+        broadcastType: String, // all / nearby / selected
+        selectedBranchIds: List<String> = emptyList(),
+        onResult: (List<Branch>) -> Unit
+    ) {
+        val activeBranches = fallbackBranches.filter { it.isActive }
+        val routedBranches = when (broadcastType) {
+            "all" -> activeBranches
+            "nearby" -> {
+                val withDist = activeBranches.map { branch ->
+                    val d = calculateDistanceKm(clientLat, clientLng, branch.latitude, branch.longitude)
+                    branch to d
+                }
+                val withinRadius = withDist.filter { it.second <= 200.0 }
+                if (withinRadius.isEmpty()) {
+                    val closest = withDist.minByOrNull { it.second }
+                    if (closest != null) listOf(closest.first) else emptyList()
+                } else {
+                    withinRadius.sortedBy { it.second }.map { it.first }
+                }
+            }
+            "selected" -> {
+                activeBranches.filter { selectedBranchIds.contains(it.branchId) }
+            }
+            else -> activeBranches
+        }
+
+        val targetBranchIds = routedBranches.map { it.branchId }
+        val finalOrder = order.copy(
+            orderId = if (order.orderId.isEmpty()) "order_" + System.currentTimeMillis() else order.orderId,
+            targetBranches = targetBranchIds,
+            status = "broadcast",
+            createdAt = System.currentTimeMillis()
+        )
+        fallbackOrders.add(finalOrder)
+
+        // Save routing log
+        val routing = OrderRouting(
+            orderId = finalOrder.orderId,
+            clientId = finalOrder.clientId,
+            targetBranches = targetBranchIds,
+            routingType = broadcastType,
+            routingReason = "توجيه تلقائي طبقاً للموقع الجغرافي ونصف قطر التغطية",
+            createdAt = System.currentTimeMillis()
+        )
+        fallbackOrderRoutings.add(routing)
+
+        // Notification to General Director
+        val notification = DirectorNotification(
+            notificationId = "notif_" + System.currentTimeMillis(),
+            title = "طلب جديد موجه",
+            message = "تم إنشاء طلب جديد برقم ${finalOrder.orderId} من العميل ${finalOrder.clientName} وموجه لـ ${targetBranchIds.size} فرع.",
+            orderId = finalOrder.orderId,
+            clientId = finalOrder.clientId,
+            clientName = finalOrder.clientName,
+            createdAt = System.currentTimeMillis()
+        )
+        fallbackDirectorNotifications.add(notification)
+
+        onResult(routedBranches)
+    }
+
+    fun sendOrderToDirector(notification: DirectorNotification, onSuccess: () -> Unit) {
+        fallbackDirectorNotifications.add(notification)
+        onSuccess()
+    }
+
+    fun getClientProfile(userId: String, onResult: (ClientProfile?) -> Unit) {
+        val p = fallbackClientProfiles.find { it.userId == userId }
+        onResult(p)
+    }
+
+    fun verifyClient(clientId: String, approve: Boolean, rejectReason: String = "", onSuccess: () -> Unit) {
+        val idx = fallbackClientProfiles.indexOfFirst { it.clientId == clientId }
+        if (idx != -1) {
+            val updated = fallbackClientProfiles[idx].copy(
+                isVerified = approve,
+                isActive = approve
+            )
+            fallbackClientProfiles[idx] = updated
+            // also update fallbackUsers list
+            val userIdx = fallbackUsers.indexOfFirst { it.userId == updated.userId }
+            if (userIdx != -1) {
+                fallbackUsers[userIdx] = fallbackUsers[userIdx].copy(
+                    isVerified = approve,
+                    isActive = approve
+                )
+            }
+        }
+        onSuccess()
+    }
+
+    fun getDirectorOrdersFeed(onResult: (List<Order>) -> Unit) {
+        onResult(fallbackOrders)
+    }
+
+    fun getBranchDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+        return calculateDistanceKm(lat1, lng1, lat2, lng2)
     }
 }

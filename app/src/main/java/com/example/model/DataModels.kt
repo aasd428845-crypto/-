@@ -3,14 +3,54 @@ package com.example.model
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class CompanyInfo(
+    val companyId: String = "main_company",
+    val companyName: String = "",
+    val companyNameEn: String = "",
+    val logoUrl: String = "",
+    val phone: String = "",
+    val email: String = "",
+    val mainAddress: String = "",
+    val foundedYear: String = "",
+    val licenseNumber: String = "",
+    val totalBranches: Int = 0,
+    val isActive: Boolean = true
+)
+
+@Serializable
+data class Branch(
+    val branchId: String = "",
+    val branchName: String = "",
+    val governorate: String = "",
+    val city: String = "",
+    val address: String = "",
+    val phone: String = "",
+    val managerId: String = "",
+    val managerName: String = "",
+    val managerPhone: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val isActive: Boolean = true,
+    val createdAt: Long = 0L
+)
+
+@Serializable
 data class User(
     val userId: String = "",
     val name: String = "",
     val email: String = "",
-    val role: String = "", // "hospital", "supplier", "admin"
-    val city: String = "صنعاء",
+    val role: String = "", // "client", "branch_manager", "company_director"
+    val clientType: String = "", // "hospital" أو "pharmacy" للعملاء فقط
+    val city: String = "",
+    val governorate: String = "",
     val phone: String = "",
-    val orgName: String = ""
+    val orgName: String = "",
+    val branchId: String = "", // لمدراء الفروع فقط
+    val branchName: String = "", // اسم الفرع
+    val isVerified: Boolean = false,
+    val isActive: Boolean = true,
+    val profileImageUrl: String = "",
+    val createdAt: Long = 0L
 )
 
 @Serializable
@@ -132,6 +172,19 @@ data class DeliverySchedule(
 @Serializable
 data class Order(
     val orderId: String = "",
+    val clientId: String = "",
+    val clientName: String = "",
+    val clientType: String = "", // hospital/pharmacy
+    val clientGovernorate: String = "",
+    val orderContent: String = "", // وصف الطلب
+    val attachments: List<String> = emptyList(),
+    val urgencyLevel: String = "normal",
+    val broadcastType: String = "all", // all/nearby/selected
+    val targetBranches: List<String> = emptyList(),
+    val status: String = "broadcast", // broadcast/offer_received/negotiating/confirmed/delivered
+    val createdAt: Long = 0L,
+
+    // Backward compatibility fields:
     val priceOfferId: String = "",
     val hospitalId: String = "",
     val supplierId: String = "",
@@ -139,7 +192,92 @@ data class Order(
     val price: Double = 0.0,
     val quantity: Int = 0,
     val deliveryMethod: String = "", // "self" or "platform"
-    val status: String = "pending", // "pending", "paid", "shipping", "delivered"
-    val deliveryScheduledDate: String = "",
+    val deliveryScheduledDate: String = ""
+)
+
+@Serializable
+data class BranchOffer(
+    val offerId: String = "",
+    val orderId: String = "",
+    val branchId: String = "",
+    val branchName: String = "",
+    val managerId: String = "",
+    val managerName: String = "",
+    val offerDetails: String = "",
+    val totalPrice: Double = 0.0,
+    val currency: String = "YER",
+    val deliveryDays: Int = 0,
+    val shippingCost: Double = 0.0,
+    val paymentTerms: String = "",
+    val attachmentUrl: String = "",
+    val notes: String = "",
+    val status: String = "pending", // pending/accepted/rejected/negotiating
     val createdAt: Long = 0L
+)
+
+@Serializable
+data class ClientProfile(
+    val clientId: String = "",
+    val userId: String = "",
+    val institutionName: String = "",
+    val clientType: String = "", // hospital / pharmacy
+    val responsiblePerson: String = "",
+    val phone: String = "",
+    val alternatePhone: String = "",
+    val licenseNumber: String = "",
+    val licenseImageUrl: String = "",
+    val governorate: String = "",
+    val city: String = "",
+    val district: String = "",
+    val neighborhood: String = "",
+    val landmark: String = "",
+    val fullAddress: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val assignedBranchId: String = "", // الفرع المخصص تلقائياً
+    val assignedBranchName: String = "",
+    val preferredPayment: String = "",
+    val paymentAccount: String = "",
+    val isVerified: Boolean = false,
+    val isActive: Boolean = true,
+    val profileCompleted: Boolean = false,
+    val joinedAt: Long = 0L,
+    val lastOrderAt: Long = 0L,
+    val totalOrders: Int = 0,
+    val totalSpent: Double = 0.0
+)
+
+@Serializable
+data class BranchManagerProfile(
+    val userId: String = "",
+    val fullName: String = "",
+    val phone: String = "",
+    val nationalIdImageUrl: String = "",
+    val warehouseLat: Double = 0.0,
+    val warehouseLng: Double = 0.0,
+    val bankAccounts: List<BankAccount> = emptyList(),
+    val profileCompleted: Boolean = false,
+    val joinedAt: Long = 0L
+)
+
+@Serializable
+data class OrderRouting(
+    val orderId: String = "",
+    val clientId: String = "",
+    val targetBranches: List<String> = emptyList(),
+    val routingType: String = "", // "all", "nearby", "selected"
+    val routingReason: String = "",
+    val createdAt: Long = 0L
+)
+
+@Serializable
+data class DirectorNotification(
+    val notificationId: String = "",
+    val title: String = "",
+    val message: String = "",
+    val orderId: String = "",
+    val clientId: String = "",
+    val clientName: String = "",
+    val createdAt: Long = 0L,
+    val read: Boolean = false
 )

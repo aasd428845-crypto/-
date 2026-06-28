@@ -28,6 +28,7 @@ import com.example.model.PriceOffer
 import com.example.model.User
 import com.example.model.BankAccount
 import com.example.service.FirebaseService
+import com.example.ui.theme.MedBlueAccent
 import com.example.ui.theme.MedBluePrimary
 import com.example.ui.theme.MedGreenPrimary
 import com.example.ui.theme.MedRedPrimary
