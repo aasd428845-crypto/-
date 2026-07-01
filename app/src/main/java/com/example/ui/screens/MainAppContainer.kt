@@ -249,10 +249,32 @@ fun MainAppContainer() {
                 )
             }
             "branch_manager" -> {
-                BranchManagerScreen(
-                    currentUser = loggedUser,
-                    onLogout = { userLoggedIn = null }
-                )
+                var branchSetupChecked by remember { mutableStateOf(false) }
+                var needsAddressSetup by remember { mutableStateOf(false) }
+
+                LaunchedEffect(loggedUser.userId) {
+                    FirebaseService.getUserAddresses(loggedUser.userId) { addresses ->
+                        needsAddressSetup = addresses.isEmpty()
+                        branchSetupChecked = true
+                    }
+                }
+
+                if (!branchSetupChecked) {
+                    // شاشة تحميل بسيطة
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MedBluePrimary)
+                    }
+                } else if (needsAddressSetup) {
+                    BranchAddressSetupScreen(
+                        currentUser = loggedUser,
+                        onSetupCompleted = { needsAddressSetup = false }
+                    )
+                } else {
+                    BranchManagerScreen(
+                        currentUser = loggedUser,
+                        onLogout = { userLoggedIn = null }
+                    )
+                }
             }
             "client" -> {
                 ClientScreen(

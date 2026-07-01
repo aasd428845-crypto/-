@@ -26,7 +26,7 @@ object FirebaseService {
         totalBranches = 6
     )
 
-    val fallbackBranches = listOf(
+    val fallbackBranches = mutableListOf(
         Branch("branch_sanaa", "فرع صنعاء الرئيسي", "صنعاء", "صنعاء", "صنعاء - الحصبة", "771111111", "manager_1", "أحمد محمد الحميدي", "771111112", 15.3482, 44.2191, true),
         Branch("branch_aden", "فرع عدن", "عدن", "عدن", "عدن - خورمكسر", "733222222", "manager_2", "فيصل علي البكري", "733222223", 12.8021, 45.0312, true),
         Branch("branch_taiz", "فرع تعز", "تعز", "تعز", "تعز - الحوبان", "711333333", "manager_3", "محمد عبدالله السلامي", "711333334", 13.5784, 44.0217, true),
@@ -59,7 +59,41 @@ object FirebaseService {
             paymentTerms = "سداد نقدي عند الاستلام أو تحويل كريمي",
             notes = "عرض خاص بمستشفى الثورة العام",
             status = "pending",
-            createdAt = System.currentTimeMillis()
+            createdAt = System.currentTimeMillis() - 7200000
+        ),
+        BranchOffer(
+            offerId = "offer_sample_2_sanaa",
+            orderId = "order_sample_2",
+            branchId = "branch_sanaa",
+            branchName = "فرع صنعاء الرئيسي",
+            managerId = "manager_1",
+            managerName = "أحمد محمد الحميدي",
+            offerDetails = "مجموعة كاملة من خافضات الحرارة متوفرة الآن في مستودعاتنا",
+            totalPrice = 45000.0,
+            currency = "YER",
+            deliveryDays = 3,
+            shippingCost = 4000.0,
+            paymentTerms = "الدفع نقداً أو كريمي عند الاستلام",
+            notes = "توصيل سريع مع تغليف حراري ممتاز للأدوية",
+            status = "pending",
+            createdAt = System.currentTimeMillis() - 1800000
+        ),
+        BranchOffer(
+            offerId = "offer_sample_2_aden",
+            orderId = "order_sample_2",
+            branchId = "branch_aden",
+            branchName = "فرع عدن",
+            managerId = "manager_2",
+            managerName = "فيصل علي البكري",
+            offerDetails = "شراب كف وخافض حرارة متوفر بالكامل تسليم فوري في عدن",
+            totalPrice = 42000.0,
+            currency = "YER",
+            deliveryDays = 1,
+            shippingCost = 1500.0,
+            paymentTerms = "فوري كاش",
+            notes = "الأقرب لعنوانكم في خورمكسر، التوصيل في نفس اليوم",
+            status = "pending",
+            createdAt = System.currentTimeMillis() - 900000
         )
     )
 
@@ -70,7 +104,10 @@ object FirebaseService {
         // Suppliers
         UserAddress("addr_sup_1", "sup_1", "supplier", "المخازن المركزية", "الشركة العالمية للأدوية", "جولة ريحة", "صنعاء", "الحصبة", "حي الرشيد", "صنعاء - الحصبة - خلف بريد الحصبة", 15.3621, 44.1956, true, System.currentTimeMillis()),
         UserAddress("addr_sup_2", "sup_2", "supplier", "الفرع الجنوبي", "مجموعة الكندي الدوائية", "جولة دار سعد", "عدن", "المنصورة", "حي التسعين", "عدن - المنصورة - شارع التسعين الرئيسي", 12.8425, 44.9854, true, System.currentTimeMillis()),
-        UserAddress("addr_sup_3", "sup_3", "supplier", "المصنع والمقر الرئيسي", "الشركة اليمنية لصناعة الأدوية (يدكو)", "جولة آية", "صنعاء", "شعوب", "حي الروضة", "صنعاء - الحصبة الشمالية - حي الروضة", 15.3892, 44.2384, true, System.currentTimeMillis())
+        UserAddress("addr_sup_3", "sup_3", "supplier", "المصنع والمقر الرئيسي", "الشركة اليمنية لصناعة الأدوية (يدكو)", "جولة آية", "صنعاء", "شعوب", "حي الروضة", "صنعاء - الحصبة الشمالية - حي الروضة", 15.3892, 44.2384, true, System.currentTimeMillis()),
+        // Branch Managers
+        UserAddress("addr_mgr_1", "manager_1", "branch_manager", "فرع صنعاء الرئيسي", "مجموعة الشفاء", "باب اليمن", "صنعاء", "صنعاء القديمة", "حي الجامع الكبير", "صنعاء القديمة - بجانب باب اليمن", 15.3482, 44.2191, true, System.currentTimeMillis()),
+        UserAddress("addr_mgr_2", "manager_2", "branch_manager", "فرع عدن", "مجموعة الشفاء", "قلعة صيرة", "عدن", "كريتر", "حي صيرة", "عدن - كريتر - بجانب القلعة", 12.8021, 45.0312, true, System.currentTimeMillis())
     )
 
     val fallbackMedicines = mutableListOf<Medicine>(
@@ -112,6 +149,34 @@ object FirebaseService {
             status = "paid",
             deliveryScheduledDate = "2026-06-10T12:00:00",
             createdAt = System.currentTimeMillis()
+        ),
+        Order(
+            orderId = "order_sample_1",
+            clientId = "profile_client_1",
+            clientName = "مستشفى الثورة العام",
+            clientType = "hospital",
+            clientGovernorate = "صنعاء",
+            orderContent = "طلب عاجل لـ 500 فيال سيفالوسبورين و 200 علبة أنسولين لانتوس",
+            attachments = listOf(),
+            urgencyLevel = "critical",
+            broadcastType = "all",
+            targetBranches = listOf("branch_sanaa", "branch_aden"),
+            status = "broadcast",
+            createdAt = System.currentTimeMillis() - 3600000
+        ),
+        Order(
+            orderId = "order_sample_2",
+            clientId = "profile_client_2",
+            clientName = "صيدلية النور المركزية",
+            clientType = "pharmacy",
+            clientGovernorate = "عدن",
+            orderContent = "مجموعة خافض حرارة للأطفال وشراب كف دواء سعال",
+            attachments = listOf(),
+            urgencyLevel = "normal",
+            broadcastType = "nearby",
+            targetBranches = listOf("branch_aden", "branch_sanaa"),
+            status = "offer_received",
+            createdAt = System.currentTimeMillis() - 7200000
         )
     )
 
@@ -324,7 +389,7 @@ object FirebaseService {
         }
     }
 
-    fun setDefaultAddress(userId: String, addressId: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+    fun setDefaultAddress(userId: String, addressId: String, onResult: (Boolean) -> Unit) {
         // Mock Update
         for (i in 0 until fallbackAddresses.size) {
             if (fallbackAddresses[i].userId == userId) {
@@ -335,10 +400,158 @@ object FirebaseService {
 
         if (db != null) {
             db!!.collection("addresses").document(addressId).update("isDefault", true)
-                .addOnSuccessListener { onSuccess() }
-                .addOnFailureListener { e -> onFailure(e.localizedMessage ?: "تحذير: لا يمكن الحفظ") }
+                .addOnSuccessListener {
+                    db!!.collection("addresses")
+                        .whereEqualTo("userId", userId)
+                        .get()
+                        .addOnSuccessListener { snap ->
+                            val batch = db!!.batch()
+                            for (doc in snap.documents) {
+                                if (doc.id != addressId) {
+                                    batch.update(doc.reference, "isDefault", false)
+                                }
+                            }
+                            batch.commit().addOnCompleteListener {
+                                onResult(true)
+                            }
+                        }
+                        .addOnFailureListener {
+                            onResult(true) // local succeeded anyway
+                        }
+                }
+                .addOnFailureListener {
+                    onResult(false)
+                }
         } else {
-            onSuccess()
+            onResult(true)
+        }
+    }
+
+    fun addUserAddress(address: UserAddress, onResult: (Boolean, String?) -> Unit) {
+        val id = if (address.addressId.isEmpty()) "addr_" + System.currentTimeMillis() else address.addressId
+        val finalAddr = address.copy(addressId = id, createdAt = System.currentTimeMillis())
+
+        if (finalAddr.isDefault) {
+            val size = fallbackAddresses.size
+            for (i in 0 until size) {
+                if (fallbackAddresses[i].userId == finalAddr.userId) {
+                    fallbackAddresses[i] = fallbackAddresses[i].copy(isDefault = false)
+                }
+            }
+        }
+
+        if (db != null) {
+            db!!.collection("addresses").document(id).set(finalAddr)
+                .addOnSuccessListener {
+                    val idx = fallbackAddresses.indexOfFirst { it.addressId == id }
+                    if (idx != -1) {
+                        fallbackAddresses[idx] = finalAddr
+                    } else {
+                        fallbackAddresses.add(finalAddr)
+                    }
+                    if (finalAddr.isDefault) {
+                        db!!.collection("addresses")
+                            .whereEqualTo("userId", finalAddr.userId)
+                            .get()
+                            .addOnSuccessListener { snap ->
+                                val batch = db!!.batch()
+                                for (doc in snap.documents) {
+                                    if (doc.id != id) {
+                                        batch.update(doc.reference, "isDefault", false)
+                                    }
+                                }
+                                batch.commit().addOnCompleteListener {
+                                    onResult(true, id)
+                                }
+                            }
+                            .addOnFailureListener {
+                                onResult(true, id)
+                            }
+                    } else {
+                        onResult(true, id)
+                    }
+                }
+                .addOnFailureListener { e ->
+                    onResult(false, e.localizedMessage)
+                }
+        } else {
+            val idx = fallbackAddresses.indexOfFirst { it.addressId == id }
+            if (idx != -1) {
+                fallbackAddresses[idx] = finalAddr
+            } else {
+                fallbackAddresses.add(finalAddr)
+            }
+            onResult(true, id)
+        }
+    }
+
+    fun updateUserAddress(address: UserAddress, onResult: (Boolean) -> Unit) {
+        val id = address.addressId
+        if (address.isDefault) {
+            val size = fallbackAddresses.size
+            for (i in 0 until size) {
+                if (fallbackAddresses[i].userId == address.userId) {
+                    fallbackAddresses[i] = fallbackAddresses[i].copy(isDefault = false)
+                }
+            }
+        }
+
+        val idx = fallbackAddresses.indexOfFirst { it.addressId == id }
+        if (idx != -1) {
+            fallbackAddresses[idx] = address
+        } else {
+            fallbackAddresses.add(address)
+        }
+
+        if (db != null) {
+            db!!.collection("addresses").document(id).set(address)
+                .addOnSuccessListener {
+                    if (address.isDefault) {
+                        db!!.collection("addresses")
+                            .whereEqualTo("userId", address.userId)
+                            .get()
+                            .addOnSuccessListener { snap ->
+                                val batch = db!!.batch()
+                                for (doc in snap.documents) {
+                                    if (doc.id != id) {
+                                        batch.update(doc.reference, "isDefault", false)
+                                    }
+                                }
+                                batch.commit().addOnCompleteListener {
+                                    onResult(true)
+                                }
+                            }
+                            .addOnFailureListener {
+                                onResult(true)
+                            }
+                    } else {
+                        onResult(true)
+                    }
+                }
+                .addOnFailureListener {
+                    onResult(false)
+                }
+        } else {
+            onResult(true)
+        }
+    }
+
+    fun deleteUserAddress(addressId: String, onResult: (Boolean) -> Unit) {
+        val idx = fallbackAddresses.indexOfFirst { it.addressId == addressId }
+        if (idx != -1) {
+            fallbackAddresses.removeAt(idx)
+        }
+
+        if (db != null) {
+            db!!.collection("addresses").document(addressId).delete()
+                .addOnSuccessListener {
+                    onResult(true)
+                }
+                .addOnFailureListener {
+                    onResult(false)
+                }
+        } else {
+            onResult(true)
         }
     }
 
@@ -603,6 +816,50 @@ object FirebaseService {
         onSuccess()
     }
 
+    fun getBranchOrders(branchId: String, onResult: (List<Order>) -> Unit) {
+        if (db != null) {
+            db!!.collection("orders")
+                .get()
+                .addOnSuccessListener { snap ->
+                    val list = snap.toObjects(Order::class.java)
+                    val filtered = list.filter { it.targetBranches.contains(branchId) || it.targetBranches.isEmpty() }
+                    if (filtered.isEmpty()) {
+                        onResult(fallbackOrders.filter { it.targetBranches.contains(branchId) || it.targetBranches.isEmpty() })
+                    } else {
+                        onResult(filtered)
+                    }
+                }
+                .addOnFailureListener {
+                    onResult(fallbackOrders.filter { it.targetBranches.contains(branchId) || it.targetBranches.isEmpty() })
+                }
+        } else {
+            onResult(fallbackOrders.filter { it.targetBranches.contains(branchId) || it.targetBranches.isEmpty() })
+        }
+    }
+
+    fun sendBranchOffer(offer: BranchOffer, onResult: (Boolean) -> Unit) {
+        submitBranchOffer(offer, { onResult(true) }, { onResult(false) })
+    }
+
+    fun acceptBranchOffer(orderId: String, offerId: String, onResult: (Boolean) -> Unit) {
+        updateBranchOfferStatus(offerId, "accepted", { onResult(true) }, { onResult(false) })
+    }
+
+    fun rejectBranchOffer(offerId: String, reason: String, onResult: (Boolean) -> Unit) {
+        val idx = fallbackBranchOffers.indexOfFirst { it.offerId == offerId }
+        if (idx != -1) {
+            fallbackBranchOffers[idx] = fallbackBranchOffers[idx].copy(status = "rejected", notes = "سبب الرفض: $reason")
+        }
+        if (db != null) {
+            db!!.collection("branch_offers").document(offerId)
+                .update("status", "rejected", "notes", "سبب الرفض: $reason")
+                .addOnSuccessListener { onResult(true) }
+                .addOnFailureListener { onResult(false) }
+        } else {
+            onResult(true)
+        }
+    }
+
     // --- Haversine Mathematics with Fallback Lookup ---
     val cityCoordinatesMap = mapOf(
         "صنعاء" to Pair(15.3482, 44.2191),
@@ -797,5 +1054,96 @@ object FirebaseService {
 
     fun getBranchDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
         return calculateDistanceKm(lat1, lng1, lat2, lng2)
+    }
+
+    // تحديث موقع الفرع في مجموعة branches
+    fun updateBranchLocation(
+        branchId: String,
+        address: String,
+        lat: Double,
+        lng: Double,
+        managerPhone: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        val idx = fallbackBranches.indexOfFirst { it.branchId == branchId }
+        if (idx != -1) {
+            val updated = fallbackBranches[idx].copy(
+                address = address,
+                latitude = lat,
+                longitude = lng,
+                managerPhone = managerPhone
+            )
+            fallbackBranches[idx] = updated
+        }
+        
+        if (db != null) {
+            db!!.collection("branches").document(branchId)
+                .update(
+                    "address", address,
+                    "latitude", lat,
+                    "longitude", lng,
+                    "managerPhone", managerPhone
+                )
+                .addOnSuccessListener { onResult(true) }
+                .addOnFailureListener { onResult(false) }
+        } else {
+            onResult(true)
+        }
+    }
+
+    // إرسال إشعار للمدير العام
+    fun notifyDirector(
+        notification: DirectorNotification,
+        onResult: (Boolean) -> Unit
+    ) {
+        val finalNotification = if (notification.notificationId.isEmpty()) {
+            notification.copy(
+                notificationId = "notif_" + System.currentTimeMillis(),
+                createdAt = System.currentTimeMillis()
+            )
+        } else {
+            notification
+        }
+        
+        // Add to fallback notifications if we have a way to track, otherwise just add to global
+        fallbackDirectorNotifications.add(finalNotification)
+        
+        if (db != null) {
+            db!!.collection("director_notifications")
+                .document(finalNotification.notificationId)
+                .set(finalNotification)
+                .addOnSuccessListener { onResult(true) }
+                .addOnFailureListener { onResult(false) }
+        } else {
+            onResult(true)
+        }
+    }
+
+    // التحقق من وجود عنوان للمستخدم
+    fun hasUserAddress(
+        userId: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        if (db != null) {
+            db!!.collection("addresses")
+                .whereEqualTo("userId", userId)
+                .get()
+                .addOnSuccessListener { snap ->
+                    val list = snap.toObjects(UserAddress::class.java)
+                    if (list.isEmpty()) {
+                        val hasFallback = fallbackAddresses.any { it.userId == userId }
+                        onResult(hasFallback)
+                    } else {
+                        onResult(true)
+                    }
+                }
+                .addOnFailureListener {
+                    val hasFallback = fallbackAddresses.any { it.userId == userId }
+                    onResult(hasFallback)
+                }
+        } else {
+            val hasFallback = fallbackAddresses.any { it.userId == userId }
+            onResult(hasFallback)
+        }
     }
 }

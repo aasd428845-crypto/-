@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.User
 import com.example.model.UserAddress
+import com.example.model.DirectorNotification
 import com.example.service.FirebaseService
 import com.example.ui.theme.MedBluePrimary
 import com.example.ui.theme.MedGreenPrimary
@@ -39,6 +40,7 @@ import kotlin.random.Random
 @Composable
 fun AddAddressScreen(
     currentUser: User,
+    existingAddress: UserAddress? = null, // إذا موجود = وضع تعديل
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit
 ) {
@@ -46,17 +48,17 @@ fun AddAddressScreen(
     val scrollState = rememberScrollState()
 
     // Form inputs state
-    var label by remember { mutableStateOf("") }
-    var orgName by remember { mutableStateOf(currentUser.orgName) }
-    var landmark by remember { mutableStateOf("") }
-    var selectedGovernorate by remember { mutableStateOf("صنعاء") }
-    var district by remember { mutableStateOf("") }
-    var neighborhood by remember { mutableStateOf("") }
-    var isDefault by remember { mutableStateOf(false) }
+    var label by remember { mutableStateOf(existingAddress?.label ?: "") }
+    var orgName by remember { mutableStateOf(existingAddress?.hospitalOrCompanyName ?: currentUser.orgName) }
+    var landmark by remember { mutableStateOf(existingAddress?.nearbyLandmark ?: "") }
+    var selectedGovernorate by remember { mutableStateOf(existingAddress?.governorate ?: "صنعاء") }
+    var district by remember { mutableStateOf(existingAddress?.district ?: "") }
+    var neighborhood by remember { mutableStateOf(existingAddress?.neighborhood ?: "") }
+    var isDefault by remember { mutableStateOf(existingAddress?.isDefault ?: false) }
 
-    // Coordinates state (Default Sana'a coordinates)
-    var latitude by remember { mutableStateOf(15.3482) }
-    var longitude by remember { mutableStateOf(44.2191) }
+    // Coordinates state
+    var latitude by remember { mutableStateOf(existingAddress?.latitude ?: 15.3482) }
+    var longitude by remember { mutableStateOf(existingAddress?.longitude ?: 44.2191) }
     var isManualMapSelection by remember { mutableStateOf(false) }
 
     // List of governorates in Yemen
@@ -68,7 +70,7 @@ fun AddAddressScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "إضافة عنوان جغرافي جديد 🗺️",
+                        if (existingAddress != null) "تعديل العنوان" else "إضافة عنوان جغرافي جديد 🗺️",
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         fontSize = 18.sp
@@ -436,8 +438,8 @@ fun AddAddressScreen(
                     }
 
                     val completeAddress = "$selectedGovernorate، مديرية $district، حي $neighborhood، معمار $landmark"
-                    val newAddress = UserAddress(
-                        addressId = "",
+                    val targetAddress = UserAddress(
+                        addressId = existingAddress?.addressId ?: "",
                         userId = currentUser.userId,
                         userType = currentUser.role,
                         label = label,
@@ -452,12 +454,41 @@ fun AddAddressScreen(
                         isDefault = isDefault
                     )
 
-                    FirebaseService.saveAddress(newAddress, {
-                        Toast.makeText(context, "تم حفظ وتوزيع العنوان الجغرافي الجديد بنجاح! 🎊 ✔", Toast.LENGTH_SHORT).show()
-                        onSaveSuccess()
-                    }, { errMsg ->
-                        Toast.makeText(context, "فشل الحفظ: $errMsg", Toast.LENGTH_SHORT).show()
-                    })
+                    if (existingAddress != null) {
+                        FirebaseService.updateUserAddress(targetAddress) { success ->
+                            if (success) {
+                                Toast.makeText(context, "تم تحديث العنوان بنجاح! 🎊 ✔", Toast.LENGTH_SHORT).show()
+                                onSaveSuccess()
+                            } else {
+                                Toast.makeText(context, "فشل تحديث العنوان ⚠️", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } else {
+                        FirebaseService.addUserAddress(targetAddress) { success, error ->
+                            if (success) {
+                                if (currentUser.role == "branch_manager") {
+                                    val notification = DirectorNotification(
+                                        notificationId = "notif_" + System.currentTimeMillis(),
+                                        title = "إضافة موقع مستودع/فرع جديد",
+                                        message = "قام مدير الفرع ${currentUser.name} بإضافة موقع جديد: ${targetAddress.label} - ${targetAddress.fullAddress}",
+                                        orderId = "",
+                                        clientId = currentUser.userId,
+                                        clientName = currentUser.name,
+                                        createdAt = System.currentTimeMillis()
+                                    )
+                                    FirebaseService.notifyDirector(notification) {
+                                        Toast.makeText(context, "تم حفظ وتثبيت العنوان الجغرافي وإخطار المدير العام! 🎊 ✔", Toast.LENGTH_SHORT).show()
+                                        onSaveSuccess()
+                                    }
+                                } else {
+                                    Toast.makeText(context, "تم حفظ وتثبيت العنوان الجغرافي الجديد بنجاح! 🎊 ✔", Toast.LENGTH_SHORT).show()
+                                    onSaveSuccess()
+                                }
+                            } else {
+                                Toast.makeText(context, "فشل حفظ العنوان: ${error ?: "خطأ غير معروف"}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
