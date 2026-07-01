@@ -29,6 +29,11 @@ import com.example.model.Order
 import com.example.model.User
 import com.example.model.UserAddress
 import com.example.model.CartItem
+import com.example.model.Invoice
+import com.example.model.PaymentStatus
+import com.example.model.PaymentTerms
+import com.example.model.ClientAccount
+import com.example.model.OrderStatus
 import com.example.service.FirebaseService
 import com.example.ui.theme.MedBluePrimary
 import com.example.ui.theme.MedGreenPrimary
@@ -64,11 +69,14 @@ fun ClientScreen(
     var selectedBranches by remember { mutableStateOf<List<String>>(emptyList()) }
     var isSubmitting by remember { mutableStateOf(false) }
 
-    // Lists
+    // Lists and Financial States
     var myOrders by remember { mutableStateOf<List<Order>>(emptyList()) }
     var activeOffersMap by remember { mutableStateOf<Map<String, List<BranchOffer>>>(emptyMap()) }
     var selectedOrderForOffers by remember { mutableStateOf<Order?>(null) }
     var showOffersDialog by remember { mutableStateOf(false) }
+
+    var clientAccountState by remember { mutableStateOf(currentUser.clientAccount) }
+    var clientInvoices by remember { mutableStateOf<List<Invoice>>(emptyList()) }
 
     // Refresh function
     fun refreshOrders() {
@@ -82,6 +90,18 @@ fun ClientScreen(
                 }
             }
             activeOffersMap = tempMap
+        }
+
+        // Fetch client specific invoices
+        FirebaseService.getClientInvoices(currentUser.userId) { invoices ->
+            clientInvoices = invoices.sortedByDescending { it.issuedAt }
+        }
+
+        // Fetch updated client account status
+        FirebaseService.getClientAccountStatus(currentUser.userId) { account ->
+            if (account != null) {
+                clientAccountState = account
+            }
         }
     }
 
@@ -221,7 +241,8 @@ fun ClientScreen(
                             selectedTabIndex = when (activeTab) {
                                 "new_order" -> 0
                                 "my_orders" -> 1
-                                else -> 2
+                                "financial" -> 2
+                                else -> 3
                             },
                             containerColor = Color.White,
                             contentColor = MedBluePrimary
@@ -229,14 +250,14 @@ fun ClientScreen(
                             Tab(
                                 selected = activeTab == "new_order",
                                 onClick = { activeTab = "new_order" },
-                                text = { Text("طلب جديد ✍️", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                                text = { Text("طلب جديد ✍️", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
                             )
                             Tab(
                                 selected = activeTab == "my_orders",
                                 onClick = { activeTab = "my_orders" },
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("طلباتي 📋", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        Text("طلباتي وتتبع الشحن 📋", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                         if (myOrders.isNotEmpty()) {
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Badge(containerColor = MedGreenPrimary) {
@@ -247,9 +268,14 @@ fun ClientScreen(
                                 }
                             )
                             Tab(
+                                selected = activeTab == "financial",
+                                onClick = { activeTab = "financial" },
+                                text = { Text("حسابي ومالي 🧾", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
+                            )
+                            Tab(
                                 selected = activeTab == "account",
                                 onClick = { activeTab = "account" },
-                                text = { Text("الحساب 👤", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                                text = { Text("الحساب 👤", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
                             )
                         }
 
@@ -484,48 +510,432 @@ fun ClientScreen(
 
                                                         Spacer(modifier = Modifier.height(10.dp))
 
+                                                                      Row(
+                                                                          modifier = Modifier.fillMaxWidth(),
+                                                                          horizontalArrangement = Arrangement.SpaceBetween,
+                                                                          verticalAlignment = Alignment.CenterVertically
+                                                                      ) {
+                                                                          Column(modifier = Modifier.weight(1f)) {
+                                                                Text("الحالة:", fontSize = 9.sp, color = Color.Gray)
+                                                                val (statusText, statusColor) = when (order.orderStatus) {
+                                                                    is OrderStatus.Draft -> Pair("مسودة قيد المراجعة ✍️", Color.Gray)
+                                                                    is OrderStatus.Submitted -> {
+                                                                        if (order.status == "offer_received") {
+                                                                            Pair("تم استلام عروض فروع! 🎉", MedGreenPrimary)
+                                                                        } else if (order.status == "confirmed") {
+                                                                            Pair("تم تأكيد طلبك والتعميد ✔", MedGreenPrimary)
+                                                                        } else {
+                                                                            Pair("بانتظار تسعير الفروع.. ⏳", Color.Gray)
+                                                                        }
+                                                                    }
+                                                                    is OrderStatus.Allocated -> Pair("تم التجهيز بالكامل - بانتظار الشاحنة 🚛", MedBluePrimary)
+                                                                    is OrderStatus.PartiallyShipped -> Pair("تم شحن جزء من الطلبية 📦", Color(0xFFF97316))
+                                                                    is OrderStatus.Invoiced -> Pair("تم إصدار الفاتورة 🧾", Color(0xFF10B981))
+                                                                    is OrderStatus.Delivered -> Pair("تم تسليم الشحنة وتأكيد الاستلام ✔", MedGreenPrimary)
+                                                                }
+                                                                Text(
+                                                                    statusText,
+                                                                    fontSize = 11.sp,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    color = statusColor
+                                                                )
+                                                            }
+
+                                                            Row(
+                                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                if (order.orderStatus is OrderStatus.Delivered || order.status == "delivered") {
+                                                                    Button(
+                                                                        onClick = {
+                                                                            if (order.orderLines.isEmpty()) {
+                                                                                Toast.makeText(context, "الطلب لا يحتوي على أصناف صالحة لإعادة الطلب", Toast.LENGTH_SHORT).show()
+                                                                            } else {
+                                                                                order.orderLines.forEach { line ->
+                                                                                    val existingIdx = cartItems.indexOfFirst { it.product.productId == line.product.productId }
+                                                                                    if (existingIdx != -1) {
+                                                                                        val existing = cartItems[existingIdx]
+                                                                                        cartItems[existingIdx] = existing.copy(quantity = existing.quantity + line.requestedQty)
+                                                                                    } else {
+                                                                                        cartItems.add(CartItem(product = line.product, quantity = line.requestedQty, addedPrice = line.unitPrice))
+                                                                                    }
+                                                                                }
+                                                                                Toast.makeText(context, "تمت إعادة إضافة الأصناف إلى السلة بنجاح 🛒", Toast.LENGTH_LONG).show()
+                                                                                clientScreenState = "cart"
+                                                                            }
+                                                                        },
+                                                                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                                                                        shape = RoundedCornerShape(8.dp),
+                                                                        contentPadding = PaddingValues(horizontal = 10.dp),
+                                                                        modifier = Modifier.height(34.dp).testTag("quick_reorder_${order.orderId}")
+                                                                    ) {
+                                                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                                            Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                                                            Text("إعادة طلب سريع 🔁", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                                        }
+                                                                    }
+                                                                } else if (offers.isNotEmpty() && order.orderStatus is OrderStatus.Submitted) {
+                                                                    Button(
+                                                                        onClick = {
+                                                                            selectedOrderForOffers = order
+                                                                            clientScreenState = "order_offers"
+                                                                        },
+                                                                        colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary),
+                                                                        shape = RoundedCornerShape(8.dp),
+                                                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                                                        modifier = Modifier.height(34.dp)
+                                                                    ) {
+                                                                        Text("عرض العروض (${offers.size}) 💰", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                                    }
+                                                                } else {
+                                                                    val stateText = when (order.orderStatus) {
+                                                                        is OrderStatus.Draft -> "مسودة"
+                                                                        is OrderStatus.Submitted -> "بانتظار الفروع.. ⏳"
+                                                                        is OrderStatus.Allocated -> "قيد الحجز 🚛"
+                                                                        is OrderStatus.PartiallyShipped -> "شحن جزئي 📦"
+                                                                        is OrderStatus.Invoiced -> "تم إصدار الفاتورة 🧾"
+                                                                        else -> "جاري المعالجة ⏳"
+                                                                    }
+                                                                    Box(
+                                                                        modifier = Modifier
+                                                                            .background(Color(0xFFF1F5F9), RoundedCornerShape(6.dp))
+                                                                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                                                                    ) {
+                                                                        Text(stateText, fontSize = 10.sp, color = Color.Gray)
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                "financial" -> {
+                                    LazyColumn(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        // 📊 Financial Summary Card
+                                        item {
+                                            Card(
+                                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                                shape = RoundedCornerShape(16.dp),
+                                                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(20.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Column {
+                                                            Text(
+                                                                "الملخص الائتماني والمالي 📊",
+                                                                fontWeight = FontWeight.Bold,
+                                                                fontSize = 16.sp,
+                                                                color = MedBluePrimary
+                                                            )
+                                                            Text(
+                                                                "حساب مالي معتمد: ${if (clientAccountState.isActive) "نشط ✔" else "موقف ❌"}",
+                                                                fontSize = 11.sp,
+                                                                color = Color.Gray
+                                                            )
+                                                        }
+
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .background(MedBluePrimary.copy(alpha = 0.1f), CircleShape)
+                                                                .padding(10.dp)
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Default.AccountBalanceWallet,
+                                                                contentDescription = null,
+                                                                tint = MedBluePrimary,
+                                                                modifier = Modifier.size(24.dp)
+                                                            )
+                                                        }
+                                                    }
+
+                                                    Divider(color = Color(0xFFF1F5F9))
+
+                                                    // Balance and utilization
+                                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.Bottom
+                                                        ) {
+                                                            Column {
+                                                                Text("الرصيد المستحق (المديونية الحالية):", fontSize = 11.sp, color = Color.Gray)
+                                                                Text(
+                                                                    String.format("%,.2f %s", clientAccountState.currentBalance, clientAccountState.currency),
+                                                                    fontSize = 22.sp,
+                                                                    fontWeight = FontWeight.ExtraBold,
+                                                                    color = if (clientAccountState.currentBalance > 0) MedRedPrimary else Color.DarkGray
+                                                                )
+                                                            }
+
+                                                            Column(horizontalAlignment = Alignment.End) {
+                                                                Text("السقف الائتماني الأقصى:", fontSize = 11.sp, color = Color.Gray)
+                                                                Text(
+                                                                    String.format("%,.2f %s", clientAccountState.creditLimit, clientAccountState.currency),
+                                                                    fontSize = 14.sp,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    color = Color.Gray
+                                                                )
+                                                            }
+                                                        }
+
+                                                        // Progress Bar
+                                                        val limitUsageRatio = if (clientAccountState.creditLimit > 0) {
+                                                            (clientAccountState.currentBalance / clientAccountState.creditLimit).toFloat().coerceIn(0f, 1f)
+                                                        } else 0f
+
+                                                        val progressColor = when {
+                                                            limitUsageRatio > 0.8f -> MedRedPrimary
+                                                            limitUsageRatio > 0.5f -> Color(0xFFF97316) // Orange
+                                                            else -> MedGreenPrimary
+                                                        }
+
+                                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            LinearProgressIndicator(
+                                                                progress = { limitUsageRatio },
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .height(10.dp)
+                                                                    .clip(CircleShape),
+                                                                color = progressColor,
+                                                                trackColor = Color(0xFFE2E8F0)
+                                                            )
+                                                            Row(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                horizontalArrangement = Arrangement.SpaceBetween
+                                                            ) {
+                                                                Text(
+                                                                    text = String.format("تم استهلاك %.1f%% من السقف الائتماني", limitUsageRatio * 100),
+                                                                    fontSize = 10.sp,
+                                                                    color = Color.Gray
+                                                                )
+                                                                Text(
+                                                                    text = String.format("المتبقي: %,.0f %s", (clientAccountState.creditLimit - clientAccountState.currentBalance).coerceAtLeast(0.0), clientAccountState.currency),
+                                                                    fontSize = 10.sp,
+                                                                    color = MedGreenPrimary,
+                                                                    fontWeight = FontWeight.Bold
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+
+                                                    Divider(color = Color(0xFFF1F5F9))
+
+                                                    // Payment Terms Detail
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .background(Color(0xFFF8FAFC), RoundedCornerShape(8.dp))
+                                                            .padding(12.dp),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Column {
+                                                            Text("شروط وآجال الدفع المتعاقد عليها:", fontSize = 11.sp, color = Color.Gray)
+                                                            val termsText = when (clientAccountState.paymentTerms) {
+                                                                PaymentTerms.NET30 -> "سداد آجل خلال 30 يوماً (NET 30)"
+                                                                PaymentTerms.NET60 -> "سداد آجل خلال 60 يوماً (NET 60)"
+                                                                PaymentTerms.CASH_ON_DELIVERY -> "الدفع نقداً عند التسليم (COD)"
+                                                                PaymentTerms.PREPAID -> "الدفع والتحصيل المسبق (Prepaid)"
+                                                            }
+                                                            Text(termsText, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MedBluePrimary)
+                                                        }
+
+                                                        Icon(
+                                                            Icons.Default.Verified,
+                                                            contentDescription = null,
+                                                            tint = MedGreenPrimary,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        // Invoices List Section
+                                        item {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    "المطالبات والفواتير الصادرة 🧾",
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 14.sp,
+                                                    color = Color.DarkGray
+                                                )
+                                                Badge(containerColor = MedBluePrimary) {
+                                                    Text(clientInvoices.size.toString(), color = Color.White, fontSize = 10.sp)
+                                                }
+                                            }
+                                        }
+
+                                        if (clientInvoices.isEmpty()) {
+                                            item {
+                                                Card(
+                                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                                                ) {
+                                                    Column(
+                                                        modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Default.ReceiptLong,
+                                                            contentDescription = null,
+                                                            tint = Color.LightGray,
+                                                            modifier = Modifier.size(48.dp)
+                                                        )
+                                                        Text(
+                                                            "لا يوجد فواتير صادرة لحسابك حالياً.",
+                                                            fontSize = 12.sp,
+                                                            color = Color.Gray
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            items(clientInvoices) { invoice ->
+                                                val isOverdueOrClose = invoice.paymentStatus == PaymentStatus.UNPAID &&
+                                                        (invoice.dueDate <= System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L)
+
+                                                Card(
+                                                    colors = CardDefaults.cardColors(
+                                                        containerColor = if (isOverdueOrClose) Color(0xFFFEF2F2) else Color.White
+                                                    ),
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    border = if (isOverdueOrClose) {
+                                                        androidx.compose.foundation.BorderStroke(1.dp, MedRedPrimary.copy(alpha = 0.4f))
+                                                    } else {
+                                                        androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                                                    },
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                                        // Title & Badge
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                "فاتورة رقم: ${invoice.invoiceId.takeLast(8).uppercase()}",
+                                                                fontWeight = FontWeight.Bold,
+                                                                fontSize = 13.sp,
+                                                                color = MedBluePrimary
+                                                            )
+
+                                                            val (statusBadgeText, statusBadgeColor, statusTextColor) = when (invoice.paymentStatus) {
+                                                                PaymentStatus.PAID -> Triple("مدفوعة بالكامل ✔", MedGreenPrimary.copy(alpha = 0.15f), MedGreenPrimary)
+                                                                PaymentStatus.PARTIALLY_PAID -> Triple("مدفوعة جزئياً 🔸", Color(0xFFFEF3C7), Color(0xFFD97706))
+                                                                PaymentStatus.UNPAID -> Triple("غير مدفوعة ⏳", MedRedPrimary.copy(alpha = 0.15f), MedRedPrimary)
+                                                            }
+
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .clip(RoundedCornerShape(6.dp))
+                                                                    .background(statusBadgeColor)
+                                                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                            ) {
+                                                                Text(
+                                                                    statusBadgeText,
+                                                                    color = statusTextColor,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    fontSize = 10.sp
+                                                                )
+                                                            }
+                                                        }
+
+                                                        Divider(color = Color(0xFFF1F5F9).copy(alpha = 0.5f))
+
+                                                        // Amount & Taxes
                                                         Row(
                                                             modifier = Modifier.fillMaxWidth(),
                                                             horizontalArrangement = Arrangement.SpaceBetween,
                                                             verticalAlignment = Alignment.CenterVertically
                                                         ) {
                                                             Column {
-                                                                Text("الحالة:", fontSize = 9.sp, color = Color.Gray)
-                                                                val statusText = when (order.status) {
-                                                                    "broadcast" -> "بث نشط جاري الاستقبال 📡"
-                                                                    "offer_received" -> "تم استلام عروض فروع! 🎉"
-                                                                    "confirmed" -> "تم تأكيد طلبك والتعميد ✔"
-                                                                    else -> order.status
-                                                                }
+                                                                Text("إجمالي مبلغ الفاتورة:", fontSize = 10.sp, color = Color.Gray)
                                                                 Text(
-                                                                    statusText,
-                                                                    fontSize = 11.sp,
-                                                                    fontWeight = FontWeight.Bold,
-                                                                    color = if (order.status == "confirmed") MedGreenPrimary else MedBluePrimary
+                                                                    String.format("%,.2f %s", invoice.totalAmount, clientAccountState.currency),
+                                                                    fontSize = 16.sp,
+                                                                    fontWeight = FontWeight.ExtraBold,
+                                                                    color = Color.DarkGray
                                                                 )
                                                             }
 
-                                                            if (offers.isNotEmpty()) {
-                                                                Button(
-                                                                    onClick = {
-                                                                        selectedOrderForOffers = order
-                                                                        clientScreenState = "order_offers"
-                                                                    },
-                                                                    colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary),
-                                                                    shape = RoundedCornerShape(8.dp),
-                                                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                                                    modifier = Modifier.height(34.dp)
-                                                                ) {
-                                                                    Text("عرض العروض (${offers.size}) 💰", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                                                }
-                                                            } else {
-                                                                Box(
-                                                                    modifier = Modifier
-                                                                        .background(Color(0xFFF1F5F9), RoundedCornerShape(6.dp))
-                                                                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                                                                ) {
-                                                                    Text("بانتظار تسعير الفروع.. ⏳", fontSize = 10.sp, color = Color.Gray)
-                                                                }
+                                                            Column(horizontalAlignment = Alignment.End) {
+                                                                Text("مشتملة على ضرائب وخصوم:", fontSize = 10.sp, color = Color.Gray)
+                                                                Text(
+                                                                    String.format("خصم: %.0f | ضريبة: %.0f", invoice.discountAmount, invoice.taxAmount),
+                                                                    fontSize = 11.sp,
+                                                                    color = Color.Gray
+                                                                )
+                                                            }
+                                                        }
+
+                                                        // Timing details and Urgent Banner
+                                                        Row(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .background(Color(0xFFF8FAFC).copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                                                .padding(8.dp),
+                                                            horizontalArrangement = Arrangement.SpaceBetween
+                                                        ) {
+                                                            Text(
+                                                                "إصدار: ${formatTimestamp(invoice.issuedAt)}",
+                                                                fontSize = 10.sp,
+                                                                color = Color.Gray
+                                                            )
+                                                            Text(
+                                                                "استحقاق: ${formatTimestamp(invoice.dueDate)}",
+                                                                fontSize = 10.sp,
+                                                                color = if (isOverdueOrClose) MedRedPrimary else Color.Gray,
+                                                                fontWeight = if (isOverdueOrClose) FontWeight.Bold else FontWeight.Normal
+                                                            )
+                                                        }
+
+                                                        if (isOverdueOrClose) {
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .background(MedRedPrimary.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                                                                    .padding(8.dp),
+                                                                verticalAlignment = Alignment.CenterVertically,
+                                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                            ) {
+                                                                Icon(
+                                                                    Icons.Default.Warning,
+                                                                    contentDescription = null,
+                                                                    tint = MedRedPrimary,
+                                                                    modifier = Modifier.size(14.dp)
+                                                                )
+                                                                Text(
+                                                                    "تنبيه: تاريخ استحقاق الفاتورة قريب جداً أو منتهي، يرجى التسوية لتجنب تعليق الائتمان.",
+                                                                    fontSize = 9.sp,
+                                                                    color = MedRedPrimary,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    lineHeight = 13.sp
+                                                                )
                                                             }
                                                         }
                                                     }
@@ -865,4 +1275,13 @@ fun FlowRow(
         verticalArrangement = Arrangement.spacedBy(crossAxisSpacing),
         content = content
     )
+}
+
+fun formatTimestamp(timestamp: Long): String {
+    return try {
+        val sdf = java.text.SimpleDateFormat("yyyy/MM/dd HH:mm", java.util.Locale.getDefault())
+        sdf.format(java.util.Date(timestamp))
+    } catch (e: Exception) {
+        "N/A"
+    }
 }

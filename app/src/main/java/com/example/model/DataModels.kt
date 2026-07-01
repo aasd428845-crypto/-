@@ -535,3 +535,14 @@ data class DirectorNotification(
     val createdAt: Long = 0L,
     val read: Boolean = false
 )
+
+@Serializable
+data class WarehouseInventoryItem(
+    val sku: String = "",
+    val name: String = "",
+    val dosageForm: String = "",
+    val availableQuantity: Int = 0,
+    val expiryDate: String = "",
+    val branchId: String = ""
+)
+

@@ -1146,4 +1146,184 @@ object FirebaseService {
             onResult(hasFallback)
         }
     }
+
+    val fallbackInvoices = mutableListOf<Invoice>()
+
+    fun getUserById(userId: String, onResult: (User?) -> Unit) {
+        if (db != null) {
+            db!!.collection("users").document(userId).get()
+                .addOnSuccessListener { snap ->
+                    val user = snap.toObject(User::class.java)
+                    if (user != null) {
+                        onResult(user)
+                    } else {
+                        onResult(fallbackUsers.find { it.userId == userId })
+                    }
+                }
+                .addOnFailureListener {
+                    onResult(fallbackUsers.find { it.userId == userId })
+                }
+        } else {
+            onResult(fallbackUsers.find { it.userId == userId })
+        }
+    }
+
+    fun allocateAndInvoiceOrder(
+        orderId: String,
+        updatedLines: List<OrderLine>,
+        newStatus: OrderStatus,
+        invoice: Invoice,
+        clientId: String,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        val orderIdx = fallbackOrders.indexOfFirst { it.orderId == orderId }
+        val statusString = when (newStatus) {
+            is OrderStatus.Allocated -> "allocated"
+            is OrderStatus.PartiallyShipped -> "partially_shipped"
+            is OrderStatus.Invoiced -> "invoiced"
+            else -> "allocated"
+        }
+
+        if (orderIdx != -1) {
+            val originalOrder = fallbackOrders[orderIdx]
+            fallbackOrders[orderIdx] = originalOrder.copy(
+                orderLines = updatedLines,
+                orderStatus = newStatus,
+                status = statusString,
+                totalAmount = invoice.totalAmount
+            )
+        }
+
+        fallbackInvoices.add(invoice)
+
+        val userIdx = fallbackUsers.indexOfFirst { it.userId == clientId }
+        if (userIdx != -1) {
+            val user = fallbackUsers[userIdx]
+            val currentAcc = user.clientAccount
+            val newBalance = currentAcc.currentBalance + invoice.totalAmount
+            fallbackUsers[userIdx] = user.copy(
+                clientAccount = currentAcc.copy(currentBalance = newBalance)
+            )
+        }
+
+        if (db != null) {
+            val batch = db!!.batch()
+            val orderRef = db!!.collection("orders").document(orderId)
+            batch.update(orderRef, mapOf(
+                "orderLines" to updatedLines,
+                "status" to statusString,
+                "totalAmount" to invoice.totalAmount
+            ))
+
+            val invoiceRef = db!!.collection("invoices").document(invoice.invoiceId)
+            batch.set(invoiceRef, invoice)
+
+            db!!.collection("users").document(clientId).get()
+                .addOnSuccessListener { userSnap ->
+                    val userObj = userSnap.toObject(User::class.java)
+                    if (userObj != null) {
+                        val currentAcc = userObj.clientAccount
+                        val newBalance = currentAcc.currentBalance + invoice.totalAmount
+                        val updatedUser = userObj.copy(
+                            clientAccount = currentAcc.copy(currentBalance = newBalance)
+                        )
+                        db!!.collection("users").document(clientId).set(updatedUser)
+                            .addOnSuccessListener {
+                                onSuccess()
+                            }
+                            .addOnFailureListener { e ->
+                                onFailure(e.message ?: "Failed to update client account")
+                            }
+                    } else {
+                        batch.commit()
+                            .addOnSuccessListener { onSuccess() }
+                            .addOnFailureListener { e -> onFailure(e.message ?: "Firestore batch failed") }
+                    }
+                }
+                .addOnFailureListener {
+                    batch.commit()
+                        .addOnSuccessListener { onSuccess() }
+                        .addOnFailureListener { e -> onFailure(e.message ?: "Firestore batch failed") }
+                }
+        } else {
+            onSuccess()
+        }
+    }
+
+    fun getInvoices(onResult: (List<Invoice>) -> Unit) {
+        if (db != null) {
+            db!!.collection("invoices").get()
+                .addOnSuccessListener { snap ->
+                    val list = snap.toObjects(Invoice::class.java)
+                    if (list.isEmpty()) {
+                        onResult(fallbackInvoices)
+                    } else {
+                        onResult(list)
+                    }
+                }
+                .addOnFailureListener {
+                    onResult(fallbackInvoices)
+                }
+        } else {
+            onResult(fallbackInvoices)
+        }
+    }
+
+    fun getClientInvoices(clientId: String, onResult: (List<Invoice>) -> Unit) {
+        getOrders { allOrders ->
+            val clientOrderIds = allOrders.filter { it.clientId == clientId }.map { it.orderId }.toSet()
+            getInvoices { allInvoices ->
+                val filtered = allInvoices.filter { it.orderId in clientOrderIds }
+                onResult(filtered)
+            }
+        }
+    }
+
+    fun getClientAccountStatus(clientId: String, onResult: (ClientAccount?) -> Unit) {
+        getUserById(clientId) { user ->
+            onResult(user?.clientAccount)
+        }
+    }
+
+    val mockWarehouseInventory = mutableListOf<WarehouseInventoryItem>(
+        WarehouseInventoryItem("PAN-EXT-100", "بانادول إكسترا (Panadol Extra)", "أقراص فموية (Tablet)", 45, "2028-05-12", "branch_sanaa"),
+        WarehouseInventoryItem("AUG-1G-050", "أوجمنتين 1 جم (Augmentin 1g)", "أقراص فموية (Tablet)", 8, "2027-11-20", "branch_sanaa"),
+        WarehouseInventoryItem("OME-20-080", "أوميبرازول 20 ملج (Omeprazole 20mg)", "كبسولات جيلاتينية (Capsule)", 5, "2028-02-18", "branch_sanaa"),
+        WarehouseInventoryItem("AMOX-500-200", "أموكسيسيلين 500 ملج (Amoxicillin)", "كبسولات جيلاتينية (Capsule)", 120, "2028-09-30", "branch_sanaa"),
+        WarehouseInventoryItem("INS-ACT-010", "أنسولين أكتRapid (Insulin)", "حقن أمبولات (Injection)", 3, "2027-04-15", "branch_sanaa"),
+        WarehouseInventoryItem("PAR-SYR-060", "باراسيتامول شراب (Paracetamol Syrup)", "شراب فموي (Syrup)", 60, "2028-01-10", "branch_sanaa"),
+        WarehouseInventoryItem("CEF-1G-120", "سيفتركسون 1 جم (Ceftriaxone)", "حقن أمبولات (Injection)", 25, "2027-08-25", "branch_sanaa"),
+        WarehouseInventoryItem("VEN-INH-030", "فنتولين بخاخ (Ventolin Inhaler)", "بخاخ استنشاقي (Inhaler)", 14, "2028-10-05", "branch_sanaa")
+    )
+
+    fun getWarehouseInventory(branchId: String, onResult: (List<WarehouseInventoryItem>) -> Unit) {
+        val mapped = mockWarehouseInventory.map { it.copy(branchId = branchId) }
+        onResult(mapped)
+    }
+
+    fun updateInventoryQuantity(sku: String, addedQty: Int) {
+        val index = mockWarehouseInventory.indexOfFirst { it.sku == sku }
+        if (index != -1) {
+            val currentItem = mockWarehouseInventory[index]
+            val newQty = (currentItem.availableQuantity + addedQty).coerceAtLeast(0)
+            mockWarehouseInventory[index] = currentItem.copy(availableQuantity = newQty)
+        }
+    }
+
+    fun updateInventoryQuantity(sku: String, addedQty: Int, expiryDate: String, onResult: (Boolean) -> Unit) {
+        val index = mockWarehouseInventory.indexOfFirst { it.sku == sku }
+        if (index != -1) {
+            val currentItem = mockWarehouseInventory[index]
+            val newQty = (currentItem.availableQuantity + addedQty).coerceAtLeast(0)
+            val updatedItem = currentItem.copy(
+                availableQuantity = newQty,
+                expiryDate = if (expiryDate.isNotEmpty()) expiryDate else currentItem.expiryDate
+            )
+            mockWarehouseInventory[index] = updatedItem
+            onResult(true)
+        } else {
+            onResult(false)
+        }
+    }
 }
