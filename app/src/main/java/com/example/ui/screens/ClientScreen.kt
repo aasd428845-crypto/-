@@ -28,6 +28,7 @@ import com.example.model.BranchOffer
 import com.example.model.Order
 import com.example.model.User
 import com.example.model.UserAddress
+import com.example.model.CartItem
 import com.example.service.FirebaseService
 import com.example.ui.theme.MedBluePrimary
 import com.example.ui.theme.MedGreenPrimary
@@ -42,6 +43,7 @@ fun ClientScreen(
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
+    val cartItems = remember { mutableStateListOf<CartItem>() }
     var activeTab by remember { mutableStateOf("new_order") } // "new_order", "my_orders", or "account"
     var clientScreenState by remember { mutableStateOf("dashboard") } // "dashboard", "new_order_flow", "digital_card_view", "addresses", "add_address", "edit_address"
 
@@ -116,10 +118,18 @@ fun ClientScreen(
                 }
             }
             "new_order_flow" -> {
-                NewOrderScreen(
-                    userId = currentUser.userId,
+                ProductCatalogScreen(
                     onNavigateBack = { clientScreenState = "dashboard" },
-                    onTrackOrderStatus = {
+                    onNavigateToCart = { clientScreenState = "cart" },
+                    cartItems = cartItems
+                )
+            }
+            "cart" -> {
+                CartScreen(
+                    currentUser = currentUser,
+                    cartItems = cartItems,
+                    onNavigateBack = { clientScreenState = "new_order_flow" },
+                    onCheckoutSuccess = {
                         clientScreenState = "dashboard"
                         activeTab = "my_orders"
                         refreshOrders()
@@ -173,6 +183,22 @@ fun ClientScreen(
                                 }
                             },
                             actions = {
+                                IconButton(onClick = { clientScreenState = "cart" }, modifier = Modifier.testTag("dashboard_view_cart")) {
+                                    BadgedBox(
+                                        badge = {
+                                            if (cartItems.isNotEmpty()) {
+                                                Badge(
+                                                    containerColor = MedGreenPrimary,
+                                                    contentColor = Color.White
+                                                ) {
+                                                    Text(cartItems.sumOf { it.quantity }.toString(), fontSize = 10.sp)
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(Icons.Default.ShoppingCart, contentDescription = "سلة المشتريات", tint = Color.White)
+                                    }
+                                }
                                 IconButton(onClick = { refreshOrders() }) {
                                     Icon(Icons.Default.Refresh, contentDescription = "تحديث", tint = Color.White)
                                 }
