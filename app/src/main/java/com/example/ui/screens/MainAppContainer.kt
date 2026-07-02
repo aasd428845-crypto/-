@@ -39,6 +39,7 @@ fun MainAppContainer() {
     // Session States
     var userLoggedIn by remember { mutableStateOf<User?>(null) }
     var currentScreenState by remember { mutableStateOf("login") } // "login", "dashboard", "add_address", "delivery_method", "payment", "bank_accounts", "schedules"
+    var directorScreenState by remember { mutableStateOf("dashboard") } // "dashboard", "catalog_management"
 
     // Temporary storage for item checkout
     var activeCheckoutOffer by remember { mutableStateOf<PriceOffer?>(null) }
@@ -76,7 +77,7 @@ fun MainAppContainer() {
             topBar = {
                 CenterAlignedTopAppBar(
                     title = { Text("ميد-لينك اليمن | MedLink Yemen 🏥", fontWeight = FontWeight.ExtraBold, color = Color.White) },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MedBluePrimary)
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
                 )
             }
         ) { paddingVals ->
@@ -189,7 +190,7 @@ fun MainAppContainer() {
                                 currentScreenState = "dashboard"
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                         modifier = Modifier
                             .weight(1f)
                             .height(40.dp)
@@ -207,7 +208,7 @@ fun MainAppContainer() {
                                 currentScreenState = "dashboard"
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                         modifier = Modifier
                             .weight(1f)
                             .height(40.dp)
@@ -243,10 +244,21 @@ fun MainAppContainer() {
 
         when (loggedUser.role) {
             "company_director" -> {
-                DirectorDashboardScreen(
-                    currentUser = loggedUser,
-                    onLogout = { userLoggedIn = null }
-                )
+                if (directorScreenState == "catalog_management") {
+                    DirectorCatalogManagementScreen(
+                        currentUser = loggedUser,
+                        onNavigateBack = { directorScreenState = "dashboard" }
+                    )
+                } else {
+                    DirectorDashboardScreen(
+                        currentUser = loggedUser,
+                        onLogout = {
+                            directorScreenState = "dashboard"
+                            userLoggedIn = null
+                        },
+                        onNavigateToCatalog = { directorScreenState = "catalog_management" }
+                    )
+                }
             }
             "branch_manager" -> {
                 var branchSetupChecked by remember { mutableStateOf(false) }
@@ -336,7 +348,7 @@ fun MainAppContainer() {
             confirmButton = {
                 Button(
                     onClick = { showExplanationHelper = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White)
                 ) {
                     Text("البدء بالتجربة الحالية 👍", fontWeight = FontWeight.Bold)
                 }

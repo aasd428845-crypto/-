@@ -113,7 +113,7 @@ fun ClientProfileSetupScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("إعداد الملف الطبي الترحيبي 🏥", fontWeight = FontWeight.Bold, color = Color.White) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MedBluePrimary)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
             )
         }
     ) { paddingVals ->
@@ -862,7 +862,7 @@ fun Step2Layout(
                         // GPS Trigger button
                         Button(
                             onClick = onGpsClick,
-                            colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                             shape = RoundedCornerShape(6.dp),
                             modifier = Modifier
                                 .fillMaxWidth()

@@ -86,7 +86,7 @@ fun DeliveryScheduleScreen(
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
             )
         }
     ) { paddingValues ->
@@ -219,7 +219,7 @@ fun DeliveryScheduleScreen(
                                     Toast.makeText(context, "تم حفظ خانة الموعد المتاح كـ مورد!", Toast.LENGTH_SHORT).show()
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                             modifier = Modifier.fillMaxWidth().height(32.dp),
                             shape = RoundedCornerShape(4.dp)
                         ) {
@@ -383,7 +383,7 @@ fun DeliveryScheduleScreen(
                                 suggestedAgreedTime = "الأربعاء 10 يونيو - 11:30 ظهراً (توقيت وسط مبرمج)"
                                 showNegotiationPanel = true
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                             modifier = Modifier.fillMaxWidth().testTag("negotiate_schedule_trigger"),
                             shape = RoundedCornerShape(8.dp)
                         ) {

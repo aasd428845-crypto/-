@@ -21,7 +21,7 @@ val OnSurfaceDark = Color(0xFF0F172A)      // نص غامق فوق الخلفي�
 val TextSecondaryGray = Color(0xFF64748B)  // نص ثانوي/وصفي
 
 // Backward Compatibility Definitions
-val MedBluePrimary = Color(0xFF0F172A)
+val MedBluePrimary = BrandPrimary
 val MedBlueAccent = BrandPrimary
 val MedGreenPrimary = SuccessGreen
 val MedRedPrimary = ErrorRed

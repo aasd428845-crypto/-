@@ -77,7 +77,7 @@ fun OrderDetailForBranchScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
             )
         }
     ) { paddingVals ->
@@ -264,7 +264,7 @@ fun OrderDetailForBranchScreen(
                                 if (offer.status != "accepted") {
                                     Button(
                                         onClick = onSendOfferClick,
-                                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                                         shape = RoundedCornerShape(8.dp),
                                         modifier = Modifier.fillMaxWidth().height(38.dp).testTag("edit_offer_btn")
                                     ) {

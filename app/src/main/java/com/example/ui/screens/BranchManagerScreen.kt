@@ -192,7 +192,7 @@ fun BranchManagerScreen(
                                     Text("خروج 🚪", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
                             },
-                            colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary)
+                            colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
                         )
                     }
                 ) { paddingVals ->
@@ -1023,7 +1023,7 @@ fun OrderAllocationScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
             )
         }
     ) { paddingVals ->

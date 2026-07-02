@@ -192,7 +192,9 @@ fun ProductCatalogScreen(
 
     // Real-Time Inventory States
     var inventoryItems by remember { mutableStateOf<List<WarehouseInventoryItem>>(emptyList()) }
+    var pharmaProducts by remember { mutableStateOf<List<PharmaProduct>>(emptyList()) }
     var isLoadingInventory by remember { mutableStateOf(false) }
+    var isLoadingProducts by remember { mutableStateOf(false) }
 
     LaunchedEffect(branchId) {
         if (branchId.isNotBlank()) {
@@ -201,6 +203,14 @@ fun ProductCatalogScreen(
                 inventoryItems = items
                 isLoadingInventory = false
             }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        isLoadingProducts = true
+        FirebaseService.getPharmaProducts { products ->
+            pharmaProducts = products
+            isLoadingProducts = false
         }
     }
 
@@ -295,7 +305,7 @@ fun ProductCatalogScreen(
                     }
                 }
             }
-        } else if (isLoadingInventory) {
+        } else if (isLoadingInventory || isLoadingProducts) {
             Box(
                 modifier = Modifier
                     .padding(paddingVals)
@@ -387,7 +397,7 @@ fun ProductCatalogScreen(
                 }
 
                 // 📦 قائمة الأصناف والمستحضرات الدوائية المفلترة
-                val filteredProducts = mockPharmaProducts.filter { product ->
+                val filteredProducts = pharmaProducts.filter { product ->
                     val matchesSearch = product.commercialName.contains(searchQuery, ignoreCase = true) ||
                             product.scientificName.contains(searchQuery, ignoreCase = true) ||
                             product.sku.contains(searchQuery, ignoreCase = true)

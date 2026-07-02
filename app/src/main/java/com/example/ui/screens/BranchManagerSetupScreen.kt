@@ -64,7 +64,7 @@ fun BranchManagerSetupScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("إعداد ملف مدير الفرع 💼", fontWeight = FontWeight.Bold, color = Color.White) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MedBluePrimary)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
             )
         }
     ) { paddingVals ->

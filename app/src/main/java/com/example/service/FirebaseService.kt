@@ -1286,6 +1286,220 @@ object FirebaseService {
         }
     }
 
+    val fallbackPharmaProducts = mutableListOf<PharmaProduct>(
+        PharmaProduct(
+            productId = "prod_1",
+            sku = "AMX-500-CAP",
+            ndcCode = "0007-4112-20",
+            commercialName = "أموكسيسيلين 500 ملجم (أمبيسيل)",
+            scientificName = "Amoxicillin Trihydrate",
+            manufacturer = "الشركة اليمنية لصناعة الأدوية (يدكو)",
+            dosageForm = DosageForm.CAPSULE,
+            strength = "500 mg",
+            isColdChain = false,
+            isControlledSubstance = false,
+            unitType = "صندوق (3 شريط)",
+            unitsPerBox = 30,
+            price = 1500.0,
+            description = "مضاد حيوي واسع الطيف لعلاج الالتهابات البكتيرية الحادة."
+        ),
+        PharmaProduct(
+            productId = "prod_2",
+            sku = "INS-ACT-INJ",
+            ndcCode = "0169-1834-11",
+            commercialName = "إنسولين أكتRapid مبرد 💉",
+            scientificName = "Insulin Human (rDNA)",
+            manufacturer = "Novo Nordisk",
+            dosageForm = DosageForm.INJECTION,
+            strength = "100 IU/ml",
+            isColdChain = true,
+            isControlledSubstance = false,
+            unitType = "فيال (Vial)",
+            unitsPerBox = 1,
+            price = 8500.0,
+            description = "إنسولين سريع المفعول للتحكم بالسكري. يحفظ في درجة حرارة 2-8 مئوية."
+        ),
+        PharmaProduct(
+            productId = "prod_3",
+            sku = "FEN-50-INJ",
+            ndcCode = "50458-038-10",
+            commercialName = "فنتانيل حقن مخدرة ⚠️ (مقيد)",
+            scientificName = "Fentanyl Citrate",
+            manufacturer = "Janssen-Cilag",
+            dosageForm = DosageForm.INJECTION,
+            strength = "50 mcg/ml",
+            isColdChain = false,
+            isControlledSubstance = true,
+            unitType = "أمبولة",
+            unitsPerBox = 5,
+            price = 12000.0,
+            description = "مسكن ألم أفيوني قوي جداً للعمليات الجراحية. خاضع للرقابة الصارمة."
+        ),
+        PharmaProduct(
+            productId = "prod_4",
+            sku = "PAR-500-TAB",
+            ndcCode = "0012-4001-50",
+            commercialName = "باراسيتامول 500 ملجم الشفاء",
+            scientificName = "Paracetamol",
+            manufacturer = "مجموعة الشفاء الدوائية",
+            dosageForm = DosageForm.TABLET,
+            strength = "500 mg",
+            isColdChain = false,
+            isControlledSubstance = false,
+            unitType = "كرتون (10 شريط)",
+            unitsPerBox = 100,
+            price = 800.0,
+            description = "خافض حرارة ومسكن للآلام الخفيفة والمتوسطة."
+        ),
+        PharmaProduct(
+            productId = "prod_5",
+            sku = "CEF-1G-INJ",
+            ndcCode = "0781-3204-95",
+            commercialName = "سيف ترياكسون 1 جرام حقن",
+            scientificName = "Ceftriaxone Sodium",
+            manufacturer = "Sandoz",
+            dosageForm = DosageForm.INJECTION,
+            strength = "1 g",
+            isColdChain = false,
+            isControlledSubstance = false,
+            unitType = "فيال + مذيب",
+            unitsPerBox = 1,
+            price = 3500.0,
+            description = "مضاد حيوي قوي من الجيل الثالث للسيفالوسبورينات."
+        ),
+        PharmaProduct(
+            productId = "prod_6",
+            sku = "ATO-20-TAB",
+            ndcCode = "0071-0156-23",
+            commercialName = "أتورفاستاتين 20 ملجم (ليبيتور)",
+            scientificName = "Atorvastatin Calcium",
+            manufacturer = "Pfizer",
+            dosageForm = DosageForm.TABLET,
+            strength = "20 mg",
+            isColdChain = false,
+            isControlledSubstance = false,
+            unitType = "شريطين",
+            unitsPerBox = 28,
+            price = 4200.0,
+            description = "خافض للكوليسترول والدهون الثلاثية للوقاية من أمراض القلب."
+        ),
+        PharmaProduct(
+            productId = "prod_7",
+            sku = "ATO-10-TAB",
+            ndcCode = "0071-0155-23",
+            commercialName = "أتورفاستاتين 10 ملجم (منتهي)",
+            scientificName = "Atorvastatin Calcium",
+            manufacturer = "Pfizer",
+            dosageForm = DosageForm.TABLET,
+            strength = "10 mg",
+            isColdChain = false,
+            isControlledSubstance = false,
+            unitType = "شريطين",
+            unitsPerBox = 28,
+            price = 3900.0,
+            description = "مخزون نافد تماماً من المستودعات حالياً."
+        ),
+        PharmaProduct(
+            productId = "prod_8",
+            sku = "VEN-100-INH",
+            ndcCode = "0173-0321-88",
+            commercialName = "فنتولين بخاخ للربو 🌬️",
+            scientificName = "Salbutamol Inhaler",
+            manufacturer = "GlaxoSmithKline",
+            dosageForm = DosageForm.INHALER,
+            strength = "100 mcg",
+            isColdChain = false,
+            isControlledSubstance = false,
+            unitType = "جهاز استنشاق",
+            unitsPerBox = 1,
+            price = 5000.0,
+            description = "موقع للقصبات الهوائية سريع المفعول لنوبات الربو وضيق التنفس."
+        ),
+        PharmaProduct(
+            productId = "prod_9",
+            sku = "AUG-312-SYR",
+            ndcCode = "0173-0315-10",
+            commercialName = "أوجمنتين شراب معلق للأطفال",
+            scientificName = "Amoxicillin / Clavulanate",
+            manufacturer = "GSK",
+            dosageForm = DosageForm.SYRUP,
+            strength = "312 mg / 5ml",
+            isColdChain = false,
+            isControlledSubstance = false,
+            unitType = "زجاجة معلق سائل",
+            unitsPerBox = 1,
+            price = 4800.0,
+            description = "مضاد حيوي مركب للأطفال لعلاج التهاب اللوزتين والأذن الوسطى."
+        )
+    )
+
+    fun getPharmaProducts(onResult: (List<PharmaProduct>) -> Unit) {
+        if (db != null) {
+            db!!.collection("products").get()
+                .addOnSuccessListener { snapshot ->
+                    val list = snapshot.toObjects(PharmaProduct::class.java)
+                    if (list.isNotEmpty()) {
+                        onResult(list)
+                    } else {
+                        // Seed Firestore if empty
+                        fallbackPharmaProducts.forEach { prod ->
+                            db!!.collection("products").document(prod.productId).set(prod)
+                        }
+                        onResult(fallbackPharmaProducts)
+                    }
+                }
+                .addOnFailureListener {
+                    onResult(fallbackPharmaProducts)
+                }
+        } else {
+            onResult(fallbackPharmaProducts)
+        }
+    }
+
+    fun savePharmaProduct(product: PharmaProduct, onResult: (Boolean) -> Unit) {
+        val finalProduct = if (product.productId.isBlank()) {
+            product.copy(productId = "prod_" + System.currentTimeMillis())
+        } else {
+            product
+        }
+        
+        // Update local memory list
+        val index = fallbackPharmaProducts.indexOfFirst { it.productId == finalProduct.productId }
+        if (index != -1) {
+            fallbackPharmaProducts[index] = finalProduct
+        } else {
+            fallbackPharmaProducts.add(finalProduct)
+        }
+
+        // Save to Firestore if available
+        if (db != null) {
+            db!!.collection("products").document(finalProduct.productId).set(finalProduct)
+                .addOnSuccessListener {
+                    onResult(true)
+                }
+                .addOnFailureListener {
+                    onResult(true) // Return true anyway as we updated fallback list
+                }
+        } else {
+            onResult(true)
+        }
+    }
+
+    fun deletePharmaProduct(productId: String, onResult: (Boolean) -> Unit) {
+        fallbackPharmaProducts.removeAll { it.productId == productId }
+        if (db != null) {
+            db!!.collection("products").document(productId).delete()
+                .addOnSuccessListener {
+                    onResult(true)
+                }
+                .addOnFailureListener {
+                    onResult(true)
+                }
+        } else {
+            onResult(true)
+        }
+    }
+
     val mockWarehouseInventory = mutableListOf<WarehouseInventoryItem>(
         WarehouseInventoryItem("AMX-500-CAP", "أموكسيسيلين 500 ملجم (أمبيسيل)", "كبسولات (Capsule)", 120, "2028-09-30", "branch_sanaa"),
         WarehouseInventoryItem("INS-ACT-INJ", "إنسولين أكتRapid مبرد 💉", "حقن (Injection)", 3, "2027-04-15", "branch_sanaa"),

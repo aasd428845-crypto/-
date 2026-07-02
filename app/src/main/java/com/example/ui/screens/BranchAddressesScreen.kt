@@ -101,7 +101,7 @@ fun BranchAddressesScreen(
                             }
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
                 )
             }
         ) { paddingValues ->
@@ -150,7 +150,7 @@ fun BranchAddressesScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                         Button(
                             onClick = onAddNewAddress,
-                            colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .fillMaxWidth()

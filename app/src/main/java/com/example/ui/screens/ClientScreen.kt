@@ -35,9 +35,7 @@ import com.example.model.PaymentTerms
 import com.example.model.ClientAccount
 import com.example.model.OrderStatus
 import com.example.service.FirebaseService
-import com.example.ui.theme.MedBluePrimary
-import com.example.ui.theme.MedGreenPrimary
-import com.example.ui.theme.MedRedPrimary
+import com.example.ui.theme.*
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 
@@ -235,7 +233,7 @@ fun ClientScreen(
                                     Text("خروج 🚪", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
                             },
-                            colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary)
+                            colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
                         )
                     }
                 ) { paddingVals ->
@@ -305,7 +303,7 @@ fun ClientScreen(
                                         // High impact welcome hero banner
                                         item {
                                             Card(
-                                                colors = CardDefaults.cardColors(containerColor = MedBluePrimary),
+                                                colors = CardDefaults.cardColors(containerColor = MedBluePrimary, contentColor = Color.White),
                                                 shape = RoundedCornerShape(16.dp),
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
@@ -554,7 +552,7 @@ fun ClientScreen(
                                                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                                                 verticalAlignment = Alignment.CenterVertically
                                                             ) {
-                                                                if (order.orderStatus is OrderStatus.Delivered || order.status == "delivered") {
+                                                                if (true) {
                                                                     Button(
                                                                         onClick = {
                                                                             if (order.orderLines.isEmpty()) {
@@ -573,17 +571,18 @@ fun ClientScreen(
                                                                                 clientScreenState = "cart"
                                                                             }
                                                                         },
-                                                                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
+                                                                        colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = OnBrandPrimary),
                                                                         shape = RoundedCornerShape(8.dp),
                                                                         contentPadding = PaddingValues(horizontal = 10.dp),
                                                                         modifier = Modifier.height(34.dp).testTag("quick_reorder_${order.orderId}")
                                                                     ) {
                                                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                                            Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                                                            Text("إعادة طلب سريع 🔁", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                                            Icon(Icons.Default.Refresh, contentDescription = null, tint = OnBrandPrimary, modifier = Modifier.size(14.dp))
+                                                                            Text("إعادة طلب سريع 🔁", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = OnBrandPrimary)
                                                                         }
                                                                     }
-                                                                } else if (offers.isNotEmpty() && order.orderStatus is OrderStatus.Submitted) {
+                                                                }
+                                                                if (offers.isNotEmpty() && order.orderStatus is OrderStatus.Submitted) {
                                                                     Button(
                                                                         onClick = {
                                                                             selectedOrderForOffers = order
@@ -790,7 +789,7 @@ fun ClientScreen(
                                                     fontSize = 14.sp,
                                                     color = Color.DarkGray
                                                 )
-                                                Badge(containerColor = MedBluePrimary) {
+                                                Badge(containerColor = MedBluePrimary, contentColor = Color.White) {
                                                     Text(clientInvoices.size.toString(), color = Color.White, fontSize = 10.sp)
                                                 }
                                             }
@@ -1105,7 +1104,7 @@ fun ClientScreen(
 
                                                     Button(
                                                         onClick = { clientScreenState = "addresses" },
-                                                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                                                        colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = OnBrandPrimary),
                                                         shape = RoundedCornerShape(8.dp),
                                                         modifier = Modifier.fillMaxWidth().height(42.dp).testTag("manage_addresses_btn")
                                                     ) {

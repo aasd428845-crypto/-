@@ -109,7 +109,7 @@ fun DeliveryMethodScreen(
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
             )
         }
     ) { paddingValues ->
@@ -213,7 +213,7 @@ fun DeliveryMethodScreen(
                                     loadAddresses()
                                 }, {})
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                             shape = RoundedCornerShape(8.dp)
                         ) {
@@ -419,7 +419,7 @@ fun DeliveryMethodScreen(
                     .fillMaxWidth()
                     .height(50.dp)
                     .testTag("confirm_delivery_method_button"),
-                colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text("المتابعة وحفظ خيار الشحن ➡️", fontSize = 14.sp, fontWeight = FontWeight.Bold)

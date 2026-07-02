@@ -91,7 +91,7 @@ fun ClientOrderOffersScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
             )
         }
     ) { paddingVals ->
@@ -479,7 +479,7 @@ fun ClientOrderOffersScreen(
                             onRefresh()
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White)
                 ) {
                     Text("إرسال التفاوض 💬")
                 }

@@ -24,9 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.example.model.BankAccount
 import com.example.model.User
 import com.example.service.FirebaseService
-import com.example.ui.theme.MedBluePrimary
-import com.example.ui.theme.MedGreenPrimary
-import com.example.ui.theme.MedRedPrimary
+import com.example.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +80,7 @@ fun BankAccountsScreen(
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
             )
         }
     ) { paddingValues ->
@@ -96,7 +94,7 @@ fun BankAccountsScreen(
         ) {
             // Dashboard Heading Card
             Card(
-                colors = CardDefaults.cardColors(containerColor = MedBluePrimary.copy(alpha = 0.05f)),
+                colors = CardDefaults.cardColors(containerColor = MedBluePrimary.copy(alpha = 0.05f), contentColor = OnSurfaceDark),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -132,7 +130,7 @@ fun BankAccountsScreen(
                         showAddDialog = true
                     },
                     modifier = Modifier.weight(1.5f).height(46.dp).testTag("add_bank_option_btn"),
-                    colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                    colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Icon(Icons.Default.AccountBalance, contentDescription = null, modifier = Modifier.size(16.dp))

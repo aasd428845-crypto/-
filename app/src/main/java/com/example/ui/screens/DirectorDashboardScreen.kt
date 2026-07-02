@@ -24,9 +24,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.User
-import com.example.ui.theme.MedBluePrimary
-import com.example.ui.theme.MedGreenPrimary
-import com.example.ui.theme.MedRedPrimary
+import com.example.ui.theme.*
 
 private data class KpiItem(
     val title: String,
@@ -41,7 +39,8 @@ private data class KpiItem(
 @Composable
 fun DirectorDashboardScreen(
     currentUser: User,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToCatalog: () -> Unit
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
@@ -64,6 +63,18 @@ fun DirectorDashboardScreen(
                     },
                     actions = {
                         TextButton(
+                            onClick = onNavigateToCatalog,
+                            modifier = Modifier.testTag("navigate_to_catalog_btn")
+                        ) {
+                            Text(
+                                text = "إدارة الكتالوج 💊",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TextButton(
                             onClick = onLogout,
                             modifier = Modifier.testTag("logout_button")
                         ) {
@@ -75,7 +86,7 @@ fun DirectorDashboardScreen(
                             )
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
                 )
             }
         ) { paddingVals ->
@@ -102,6 +113,49 @@ fun DirectorDashboardScreen(
                             fontSize = 12.sp,
                             color = Color(0xFF64748B)
                         )
+                    }
+                }
+
+                // Quick Catalog Access Banner
+                item {
+                    Card(
+                        onClick = onNavigateToCatalog,
+                        colors = CardDefaults.cardColors(containerColor = BrandPrimary),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("catalog_access_banner_card")
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    "إدارة كتالوج الأدوية الموحد 💊",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = OnBrandPrimary
+                                )
+                                Text(
+                                    "إضافة وتعديل وحذف الأصناف والأسعار المركزية لجميع الفروع",
+                                    fontSize = 11.sp,
+                                    color = OnBrandPrimary.copy(alpha = 0.8f)
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = null,
+                                tint = OnBrandPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
 
