@@ -22,9 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.*
 import com.example.service.FirebaseService
-import com.example.ui.theme.MedBluePrimary
-import com.example.ui.theme.MedGreenPrimary
-import com.example.ui.theme.MedRedPrimary
+import com.example.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -186,7 +184,7 @@ fun CartScreen(
                                     }
                                 )
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = OnBrandPrimary),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
@@ -234,7 +232,7 @@ fun CartScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(
                         onClick = onNavigateBack,
-                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = OnBrandPrimary),
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text("الذهاب للكتالوج ➡️", color = Color.White, fontWeight = FontWeight.Bold)

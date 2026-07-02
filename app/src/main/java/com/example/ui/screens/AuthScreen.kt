@@ -25,9 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.User
 import com.example.service.FirebaseService
-import com.example.ui.theme.MedBluePrimary
-import com.example.ui.theme.MedGreenPrimary
-import com.example.ui.theme.MedRedPrimary
+import com.example.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,7 +45,7 @@ fun AuthScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0F172A)) // Elegant Cosmic Dark
+            .background(SurfaceLight) // Clean, enterprise-grade light background
             .padding(24.dp)
             .testTag("auth_container"),
         verticalArrangement = Arrangement.Center,
@@ -57,14 +55,14 @@ fun AuthScreen(
         Box(
             modifier = Modifier
                 .size(80.dp)
-                .background(MedBluePrimary, CircleShape)
-                .border(2.dp, MedGreenPrimary, CircleShape),
+                .background(Color.White, CircleShape)
+                .border(2.dp, BrandPrimary, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.MedicalServices,
                 contentDescription = null,
-                tint = MedGreenPrimary,
+                tint = BrandPrimary,
                 modifier = Modifier.size(40.dp)
             )
         }
@@ -73,15 +71,15 @@ fun AuthScreen(
 
         Text(
             text = "ميد-لينك اليمن | MedLink Yemen 🏥",
-            color = Color.White,
+            color = OnSurfaceDark,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 18.sp,
             textAlign = TextAlign.Center
         )
         Text(
             text = "البوابة الموحدة لسلسلة الإمداد الدوائي والمشتريات الطبية",
-            color = Color.LightGray,
-            fontSize = 11.sp,
+            color = TextSecondaryGray,
+            fontSize = 12.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
         )
@@ -90,14 +88,14 @@ fun AuthScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
+                .background(Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                 .padding(4.dp)
         ) {
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (selectedTab == 0) MedBluePrimary else Color.Transparent)
+                    .background(if (selectedTab == 0) BrandPrimary else Color.Transparent)
                     .clickable { selectedTab = 0 }
                     .padding(vertical = 12.dp)
                     .testTag("tab_login"),
@@ -105,7 +103,7 @@ fun AuthScreen(
             ) {
                 Text(
                     "تسجيل الدخول",
-                    color = if (selectedTab == 0) Color.White else Color.LightGray,
+                    color = if (selectedTab == 0) OnBrandPrimary else OnSurfaceDark,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -115,7 +113,7 @@ fun AuthScreen(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (selectedTab == 1) MedBluePrimary else Color.Transparent)
+                    .background(if (selectedTab == 1) BrandPrimary else Color.Transparent)
                     .clickable { selectedTab = 1 }
                     .padding(vertical = 12.dp)
                     .testTag("tab_signup"),
@@ -123,7 +121,7 @@ fun AuthScreen(
             ) {
                 Text(
                     "إنشاء حساب جديد",
-                    color = if (selectedTab == 1) Color.White else Color.LightGray,
+                    color = if (selectedTab == 1) OnBrandPrimary else OnSurfaceDark,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -134,9 +132,11 @@ fun AuthScreen(
 
         // Card containing dynamic input form
         Card(
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
             shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -146,7 +146,7 @@ fun AuthScreen(
                     // ACCOUNT TYPE SELECTOR WITH LARGE MODERN BUTTONS
                     Text(
                         "حدد نوع منشأتك أولاً:",
-                        color = Color.White,
+                        color = OnSurfaceDark,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
                         textAlign = TextAlign.Right,
@@ -164,11 +164,11 @@ fun AuthScreen(
                                 .clip(RoundedCornerShape(10.dp))
                                 .border(
                                     2.dp,
-                                    if (clientType == "hospital") MedGreenPrimary else Color.Gray,
+                                    if (clientType == "hospital") BrandPrimary else Color(0xFFCBD5E1),
                                     RoundedCornerShape(10.dp)
                                 )
                                 .background(
-                                    if (clientType == "hospital") MedGreenPrimary.copy(alpha = 0.15f) else Color.Transparent
+                                    if (clientType == "hospital") BrandPrimary.copy(alpha = 0.08f) else Color.White
                                 )
                                 .clickable { clientType = "hospital" }
                                 .padding(vertical = 14.dp)
@@ -180,7 +180,7 @@ fun AuthScreen(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     "مستشفى أو مركز",
-                                    color = Color.White,
+                                    color = OnSurfaceDark,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp
                                 )
@@ -194,11 +194,11 @@ fun AuthScreen(
                                 .clip(RoundedCornerShape(10.dp))
                                 .border(
                                     2.dp,
-                                    if (clientType == "pharmacy") MedGreenPrimary else Color.Gray,
+                                    if (clientType == "pharmacy") BrandPrimary else Color(0xFFCBD5E1),
                                     RoundedCornerShape(10.dp)
                                 )
                                 .background(
-                                    if (clientType == "pharmacy") MedGreenPrimary.copy(alpha = 0.15f) else Color.Transparent
+                                    if (clientType == "pharmacy") BrandPrimary.copy(alpha = 0.08f) else Color.White
                                 )
                                 .clickable { clientType = "pharmacy" }
                                 .padding(vertical = 14.dp)
@@ -210,7 +210,7 @@ fun AuthScreen(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     "صيدلية أو مستودع",
-                                    color = Color.White,
+                                    color = OnSurfaceDark,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp
                                 )
@@ -224,17 +224,17 @@ fun AuthScreen(
                     value = emailInput,
                     onValueChange = { emailInput = it },
                     label = { Text("البريد الإلكتروني") },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = Color.LightGray) },
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = TextSecondaryGray) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("auth_email_field"),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedLabelColor = MedGreenPrimary,
-                        unfocusedLabelColor = Color.LightGray,
-                        focusedBorderColor = MedGreenPrimary,
-                        unfocusedBorderColor = Color.Gray
+                        focusedTextColor = OnSurfaceDark,
+                        unfocusedTextColor = OnSurfaceDark,
+                        focusedLabelColor = BrandPrimary,
+                        unfocusedLabelColor = TextSecondaryGray,
+                        focusedBorderColor = BrandPrimary,
+                        unfocusedBorderColor = Color(0xFFCBD5E1)
                     ),
                     singleLine = true
                 )
@@ -244,18 +244,18 @@ fun AuthScreen(
                     value = passwordInput,
                     onValueChange = { passwordInput = it },
                     label = { Text("كلمة المرور") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Color.LightGray) },
+                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = TextSecondaryGray) },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("auth_password_field"),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedLabelColor = MedGreenPrimary,
-                        unfocusedLabelColor = Color.LightGray,
-                        focusedBorderColor = MedGreenPrimary,
-                        unfocusedBorderColor = Color.Gray
+                        focusedTextColor = OnSurfaceDark,
+                        unfocusedTextColor = OnSurfaceDark,
+                        focusedLabelColor = BrandPrimary,
+                        unfocusedLabelColor = TextSecondaryGray,
+                        focusedBorderColor = BrandPrimary,
+                        unfocusedBorderColor = Color(0xFFCBD5E1)
                     ),
                     singleLine = true
                 )
@@ -266,18 +266,18 @@ fun AuthScreen(
                         value = confirmPasswordInput,
                         onValueChange = { confirmPasswordInput = it },
                         label = { Text("تأكيد كلمة المرور") },
-                        leadingIcon = { Icon(Icons.Default.LockClock, contentDescription = null, tint = Color.LightGray) },
+                        leadingIcon = { Icon(Icons.Default.LockClock, contentDescription = null, tint = TextSecondaryGray) },
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("auth_confirm_password_field"),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedLabelColor = MedGreenPrimary,
-                            unfocusedLabelColor = Color.LightGray,
-                            focusedBorderColor = MedGreenPrimary,
-                            unfocusedBorderColor = Color.Gray
+                            focusedTextColor = OnSurfaceDark,
+                            unfocusedTextColor = OnSurfaceDark,
+                            focusedLabelColor = BrandPrimary,
+                            unfocusedLabelColor = TextSecondaryGray,
+                            focusedBorderColor = BrandPrimary,
+                            unfocusedBorderColor = Color(0xFFCBD5E1)
                         ),
                         singleLine = true
                     )
@@ -355,7 +355,7 @@ fun AuthScreen(
                             }
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = OnBrandPrimary),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -363,13 +363,13 @@ fun AuthScreen(
                         .testTag("auth_submit_btn")
                 ) {
                     if (isProgressing) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(color = OnBrandPrimary, modifier = Modifier.size(24.dp))
                     } else {
                         Text(
                             if (selectedTab == 0) "تسجيل الدخول 🚪" else "إنشاء الحساب وبدء التأهيل 🚀",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = OnBrandPrimary
                         )
                     }
                 }
@@ -381,17 +381,18 @@ fun AuthScreen(
         // Demo Accounts Shortcut Notice
         Text(
             "💡 للتجربة السريعة للأنواع المختلفة، اكتب أحد الحسابات التالية:",
-            color = Color.Gray,
-            fontSize = 10.sp,
+            color = TextSecondaryGray,
+            fontSize = 11.sp,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             "العميل: thawra@hospital.com\nالفرع: sanaa@alshefa.com\nالمدير: director@alshefa.com",
-            color = Color.LightGray,
-            fontSize = 10.sp,
+            color = OnSurfaceDark.copy(alpha = 0.8f),
+            fontSize = 11.sp,
             textAlign = TextAlign.Center,
-            lineHeight = 16.sp
+            lineHeight = 16.sp,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }

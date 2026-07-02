@@ -452,7 +452,7 @@ fun BranchManagerScreen(
                                                                         selectedOrderForAllocation = order
                                                                         branchManagerScreenState = "order_allocation"
                                                                     },
-                                                                    colors = ButtonDefaults.buttonColors(containerColor = MedBlueAccent),
+                                                                    colors = ButtonDefaults.buttonColors(containerColor = MedBlueAccent, contentColor = Color.White),
                                                                     shape = RoundedCornerShape(6.dp),
                                                                     contentPadding = PaddingValues(horizontal = 12.dp),
                                                                     modifier = Modifier
@@ -641,7 +641,7 @@ fun BranchManagerScreen(
                                                         Toast.makeText(context, "لا توجد طلبات جديدة معلقة لتقديم عروض تسعير عليها حالياً.", Toast.LENGTH_SHORT).show()
                                                     }
                                                 },
-                                                colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary),
+                                                colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary, contentColor = Color.White),
                                                 modifier = Modifier.height(28.dp),
                                                 contentPadding = PaddingValues(horizontal = 8.dp)
                                             ) {
@@ -889,7 +889,7 @@ fun BranchManagerScreen(
                                 Toast.makeText(context, "فشل تقديم العرض", Toast.LENGTH_SHORT).show()
                             })
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary)
+                        colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary, contentColor = Color.White)
                     ) {
                         if (isSubmittingOffer) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
@@ -1431,7 +1431,8 @@ fun OrderAllocationScreen(
                         )
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (linesToDisplay.any { (shippedQuantities[it.lineId]?.toIntOrNull() ?: 0) < it.requestedQty }) Color(0xFFF59E0B) else MedGreenPrimary
+                        containerColor = if (linesToDisplay.any { (shippedQuantities[it.lineId]?.toIntOrNull() ?: 0) < it.requestedQty }) Color(0xFFF59E0B) else MedGreenPrimary,
+                        contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier

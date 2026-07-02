@@ -1287,14 +1287,15 @@ object FirebaseService {
     }
 
     val mockWarehouseInventory = mutableListOf<WarehouseInventoryItem>(
-        WarehouseInventoryItem("PAN-EXT-100", "بانادول إكسترا (Panadol Extra)", "أقراص فموية (Tablet)", 45, "2028-05-12", "branch_sanaa"),
-        WarehouseInventoryItem("AUG-1G-050", "أوجمنتين 1 جم (Augmentin 1g)", "أقراص فموية (Tablet)", 8, "2027-11-20", "branch_sanaa"),
-        WarehouseInventoryItem("OME-20-080", "أوميبرازول 20 ملج (Omeprazole 20mg)", "كبسولات جيلاتينية (Capsule)", 5, "2028-02-18", "branch_sanaa"),
-        WarehouseInventoryItem("AMOX-500-200", "أموكسيسيلين 500 ملج (Amoxicillin)", "كبسولات جيلاتينية (Capsule)", 120, "2028-09-30", "branch_sanaa"),
-        WarehouseInventoryItem("INS-ACT-010", "أنسولين أكتRapid (Insulin)", "حقن أمبولات (Injection)", 3, "2027-04-15", "branch_sanaa"),
-        WarehouseInventoryItem("PAR-SYR-060", "باراسيتامول شراب (Paracetamol Syrup)", "شراب فموي (Syrup)", 60, "2028-01-10", "branch_sanaa"),
-        WarehouseInventoryItem("CEF-1G-120", "سيفتركسون 1 جم (Ceftriaxone)", "حقن أمبولات (Injection)", 25, "2027-08-25", "branch_sanaa"),
-        WarehouseInventoryItem("VEN-INH-030", "فنتولين بخاخ (Ventolin Inhaler)", "بخاخ استنشاقي (Inhaler)", 14, "2028-10-05", "branch_sanaa")
+        WarehouseInventoryItem("AMX-500-CAP", "أموكسيسيلين 500 ملجم (أمبيسيل)", "كبسولات (Capsule)", 120, "2028-09-30", "branch_sanaa"),
+        WarehouseInventoryItem("INS-ACT-INJ", "إنسولين أكتRapid مبرد 💉", "حقن (Injection)", 3, "2027-04-15", "branch_sanaa"),
+        WarehouseInventoryItem("FEN-50-INJ", "فنتانيل حقن مخدرة ⚠️ (مقيد)", "حقن (Injection)", 15, "2028-06-20", "branch_sanaa"),
+        WarehouseInventoryItem("PAR-500-TAB", "باراسيتامول 500 ملجم الشفاء", "أقراص (Tablet)", 45, "2028-05-12", "branch_sanaa"),
+        WarehouseInventoryItem("CEF-1G-INJ", "سيف ترياكسون 1 جرام حقن", "حقن (Injection)", 25, "2027-08-25", "branch_sanaa"),
+        WarehouseInventoryItem("ATO-20-TAB", "أتورفاستاتين 20 ملجم (ليبيتور)", "أقراص (Tablet)", 28, "2028-02-18", "branch_sanaa"),
+        WarehouseInventoryItem("ATO-10-TAB", "أتورفاستاتين 10 ملجم (منتهي)", "أقراص (Tablet)", 0, "2026-12-31", "branch_sanaa"),
+        WarehouseInventoryItem("VEN-100-INH", "فنتولين بخاخ للربو 🌬️", "بخاخ ربو (Inhaler)", 14, "2028-10-05", "branch_sanaa"),
+        WarehouseInventoryItem("AUG-312-SYR", "أوجمنتين شراب معلق للأطفال", "شراب (Syrup)", 8, "2027-11-20", "branch_sanaa")
     )
 
     fun getWarehouseInventory(branchId: String, onResult: (List<WarehouseInventoryItem>) -> Unit) {

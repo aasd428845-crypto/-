@@ -488,7 +488,8 @@ fun WarehouseInventoryScreen(
                     },
                     modifier = Modifier.testTag("save_adjustment_btn"),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (adjustmentType == "receive") MedGreenPrimary else MedRedPrimary
+                        containerColor = if (adjustmentType == "receive") MedGreenPrimary else MedRedPrimary,
+                        contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {

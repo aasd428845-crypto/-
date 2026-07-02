@@ -77,6 +77,13 @@ fun ClientScreen(
 
     var clientAccountState by remember { mutableStateOf(currentUser.clientAccount) }
     var clientInvoices by remember { mutableStateOf<List<Invoice>>(emptyList()) }
+    var clientProfileState by remember { mutableStateOf<com.example.model.ClientProfile?>(null) }
+
+    fun refreshProfile() {
+        FirebaseService.getClientProfile(currentUser.userId) { profile ->
+            clientProfileState = profile
+        }
+    }
 
     // Refresh function
     fun refreshOrders() {
@@ -108,6 +115,7 @@ fun ClientScreen(
     LaunchedEffect(currentUser.userId) {
         refreshOrders()
         refreshDefaultAddress()
+        refreshProfile()
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -141,7 +149,8 @@ fun ClientScreen(
                 ProductCatalogScreen(
                     onNavigateBack = { clientScreenState = "dashboard" },
                     onNavigateToCart = { clientScreenState = "cart" },
-                    cartItems = cartItems
+                    cartItems = cartItems,
+                    branchId = clientProfileState?.assignedBranchId ?: ""
                 )
             }
             "cart" -> {
@@ -564,7 +573,7 @@ fun ClientScreen(
                                                                                 clientScreenState = "cart"
                                                                             }
                                                                         },
-                                                                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                                                                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                                                                         shape = RoundedCornerShape(8.dp),
                                                                         contentPadding = PaddingValues(horizontal = 10.dp),
                                                                         modifier = Modifier.height(34.dp).testTag("quick_reorder_${order.orderId}")
@@ -580,12 +589,12 @@ fun ClientScreen(
                                                                             selectedOrderForOffers = order
                                                                             clientScreenState = "order_offers"
                                                                         },
-                                                                        colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary),
+                                                                        colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary, contentColor = Color.White),
                                                                         shape = RoundedCornerShape(8.dp),
                                                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                                                                         modifier = Modifier.height(34.dp)
                                                                     ) {
-                                                                        Text("عرض العروض (${offers.size}) 💰", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                                        Text("عرض العروض (${offers.size}) 💰", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                                                     }
                                                                 } else {
                                                                     val stateText = when (order.orderStatus) {

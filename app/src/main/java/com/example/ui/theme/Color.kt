@@ -2,15 +2,26 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val MedBluePrimary = Color(0xFF0F172A) // Dark slate primary for high-contrast elite UI
-val MedBlueAccent = Color(0xFF2563EB) // Royal blue for focus buttons
-val MedGreenPrimary = Color(0xFF10B981) // Emerald for money, acceptance, and positive flow
-val MedRedPrimary = Color(0xFFEF4444) // Soft red for rejection
+// Semantic Color Palette
+val BrandPrimary = Color(0xFF2563EB)       // أزرق أساسي للأزرار والعناصر الرئيسية
+val OnBrandPrimary = Color(0xFFFFFFFF)     // أبيض دائماً فوق الأزرق الأساسي
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val SuccessGreen = Color(0xFF10B981)       // نجاح / قبول / أموال
+val OnSuccessGreen = Color(0xFFFFFFFF)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val ErrorRed = Color(0xFFEF4444)           // رفض / خطر
+val OnErrorRed = Color(0xFFFFFFFF)
+
+val WarningAmber = Color(0xFFD97706)       // تنبيه / مخزون منخفض
+val OnWarningAmber = Color(0xFFFFFFFF)
+
+val SurfaceLight = Color(0xFFF8FAFC)       // خلفية عامة فاتحة
+val OnSurfaceDark = Color(0xFF0F172A)      // نص غامق فوق الخلفيات الفاتحة فقط
+
+val TextSecondaryGray = Color(0xFF64748B)  // نص ثانوي/وصفي
+
+// Backward Compatibility Definitions
+val MedBluePrimary = Color(0xFF0F172A)
+val MedBlueAccent = BrandPrimary
+val MedGreenPrimary = SuccessGreen
+val MedRedPrimary = ErrorRed
