@@ -40,7 +40,8 @@ private data class KpiItem(
 fun DirectorDashboardScreen(
     currentUser: User,
     onLogout: () -> Unit,
-    onNavigateToCatalog: () -> Unit
+    onNavigateToCatalog: () -> Unit,
+    onNavigateToCrossBranchInventory: () -> Unit
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
@@ -62,6 +63,18 @@ fun DirectorDashboardScreen(
                         }
                     },
                     actions = {
+                        TextButton(
+                            onClick = onNavigateToCrossBranchInventory,
+                            modifier = Modifier.testTag("navigate_to_cross_branch_inventory_btn")
+                        ) {
+                            Text(
+                                text = "المخزون الموحد 📦",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
                         TextButton(
                             onClick = onNavigateToCatalog,
                             modifier = Modifier.testTag("navigate_to_catalog_btn")
@@ -153,6 +166,49 @@ fun DirectorDashboardScreen(
                                 imageVector = Icons.Default.ArrowBack,
                                 contentDescription = null,
                                 tint = OnBrandPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Quick Cross-Branch Inventory Access Banner
+                item {
+                    Card(
+                        onClick = onNavigateToCrossBranchInventory,
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0284C7)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("cross_branch_inventory_banner_card")
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    "مراقبة مخزون الفروع الموحد 📦",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = Color.White
+                                )
+                                Text(
+                                    "عرض ومراقبة كميات الأدوية في جميع الفروع وكشف العجز الفوري",
+                                    fontSize = 11.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = null,
+                                tint = Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
                         }

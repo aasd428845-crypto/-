@@ -925,6 +925,28 @@ fun OrderAllocationScreen(
     var clientUser by remember { mutableStateOf<User?>(null) }
     var isLoadingClient by remember { mutableStateOf(true) }
 
+    var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+
+    var selectedSkusForTransfer by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var branches by remember { mutableStateOf<List<Branch>>(emptyList()) }
+    var clientAddresses by remember { mutableStateOf<List<UserAddress>>(emptyList()) }
+    var showManualTransferDialog by remember { mutableStateOf(false) }
+    var transferType by remember { mutableStateOf("full") } // "full" or "partial"
+    var isTransferring by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        FirebaseService.getBranches { fetched ->
+            branches = fetched.filter { it.branchId != currentUser.branchId && it.isActive }
+        }
+    }
+
+    LaunchedEffect(order.clientId) {
+        FirebaseService.getUserAddresses(order.clientId) { addrs ->
+            clientAddresses = addrs
+        }
+    }
+
     // Fetch client user details including credit limits
     LaunchedEffect(order.clientId) {
         isLoadingClient = true
@@ -1304,6 +1326,209 @@ fun OrderAllocationScreen(
                                 }
                             }
                         }
+
+                        Divider(color = Color(0xFFF1F5F9))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedSkusForTransfer = if (selectedSkusForTransfer.contains(line.product.sku)) {
+                                        selectedSkusForTransfer - line.product.sku
+                                    } else {
+                                        selectedSkusForTransfer + line.product.sku
+                                    }
+                                }
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Checkbox(
+                                checked = selectedSkusForTransfer.contains(line.product.sku),
+                                onCheckedChange = { checked ->
+                                    selectedSkusForTransfer = if (checked == true) {
+                                        selectedSkusForTransfer + line.product.sku
+                                    } else {
+                                        selectedSkusForTransfer - line.product.sku
+                                    }
+                                },
+                                modifier = Modifier.testTag("transfer_checkbox_${line.product.sku}")
+                            )
+                            Text(
+                                text = "تحويل هذا الصنف لإعادة توجيه الشحنة 📦",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF475569)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 3.5 Order Redirection/Transfer Section
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SwapHoriz,
+                                contentDescription = null,
+                                tint = MedBluePrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "📦 إدارة تحويل وإعادة توجيه الشحنات (Order Redirection)",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = MedBluePrimary
+                            )
+                        }
+                        
+                        Text(
+                            text = "إذا لم يتوفر لديك مخزون كافٍ، يمكنك تحويل الطلب لفرع آخر يمتلك مخزوناً كافياً، إما يدوياً أو تلقائياً بالاعتماد على النظام الذكي للبحث عن أقرب فرع متوفر فيه مخزون.",
+                            fontSize = 10.sp,
+                            color = Color.Gray
+                        )
+                        
+                        Divider(color = Color(0xFFF1F5F9))
+                        
+                        Text(
+                            text = "التحويل اليدوي للطلبات:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            color = Color.DarkGray
+                        )
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    transferType = "full"
+                                    showManualTransferDialog = true
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F172A)),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(40.dp)
+                                    .testTag("transfer_full_order_btn")
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("تحويل كامل الطلب", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            
+                            Button(
+                                onClick = {
+                                    transferType = "partial"
+                                    showManualTransferDialog = true
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF475569)),
+                                shape = RoundedCornerShape(8.dp),
+                                enabled = selectedSkusForTransfer.isNotEmpty(),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(40.dp)
+                                    .testTag("transfer_partial_order_btn")
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(Icons.Default.List, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("تحويل الأصناف المحددة (${selectedSkusForTransfer.size})", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        
+                        Divider(color = Color(0xFFF1F5F9))
+                        
+                        Text(
+                            text = "التحويل الذكي التلقائي 🤖 (نظام الذكاء اللوجستي):",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            color = Color.DarkGray
+                        )
+                        
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Button(
+                                onClick = {
+                                    isTransferring = true
+                                    FirebaseService.smartTransferOrder(order.orderId, partialOnly = true) { success, branchName ->
+                                        isTransferring = false
+                                        if (success) {
+                                            Toast.makeText(context, "🤖 تم التحويل الذكي التلقائي (للأصناف الناقصة فقط) بنجاح لفرع: $branchName", Toast.LENGTH_LONG).show()
+                                            onSuccess()
+                                        } else {
+                                            Toast.makeText(context, "⚠️ " + (branchName ?: "لا يوجد فرع بديل متوفر لهذه الأصناف حالياً"), Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(40.dp)
+                                    .testTag("smart_transfer_partial_btn")
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("🤖 تحويل ذكي تلقائي (الأصناف الناقصة فقط)", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            
+                            Button(
+                                onClick = {
+                                    isTransferring = true
+                                    FirebaseService.smartTransferOrder(order.orderId, partialOnly = false) { success, branchName ->
+                                        isTransferring = false
+                                        if (success) {
+                                            Toast.makeText(context, "🤖 تم التحويل الذكي التلقائي (للطلب بالكامل) بنجاح لفرع: $branchName", Toast.LENGTH_LONG).show()
+                                            onSuccess()
+                                        } else {
+                                            Toast.makeText(context, "⚠️ " + (branchName ?: "لا يوجد فرع بديل متوفر لهذه الأصناف حالياً"), Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0369A1)),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(40.dp)
+                                    .testTag("smart_transfer_full_btn")
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("🤖 تحويل ذكي تلقائي (الطلب بالكامل)", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1356,8 +1581,102 @@ fun OrderAllocationScreen(
                             Text(
                                 text = "📌 تاريخ استحقاق الفاتورة: السداد خلال $termsDays يوماً (" + clientTerms.name + ") بناءً على الاتفاقية الائتمانية للعميل.",
                                 fontSize = 10.sp,
-                                color = MedBluePrimary,
                                 fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 4.5 Expected Delivery Date Section (Mandatory)
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, if (selectedDateMillis == null) ErrorRed else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = null,
+                                tint = if (selectedDateMillis == null) WarningAmber else SuccessGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "📅 موعد التسليم المتوقع (إلزامي)",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = if (selectedDateMillis == null) WarningAmber else SuccessGreen
+                            )
+                        }
+
+                        Text(
+                            text = "يجب تحديد تاريخ التسليم المتوقع للشحنة لإصدار الفاتورة وتنبيه الصيدلية بموعد وصولها التقريبي.",
+                            fontSize = 11.sp,
+                            color = TextSecondaryGray
+                        )
+
+                        if (selectedDateMillis != null) {
+                            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale("ar"))
+                            val dateStr = sdf.format(Date(selectedDateMillis!!))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(SuccessGreen.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                    .border(1.dp, SuccessGreen, RoundedCornerShape(8.dp))
+                                    .clickable { showDatePickerDialog = true }
+                                    .padding(12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SuccessGreen)
+                                    Text(
+                                        text = "تاريخ التسليم المحدد: $dateStr",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = SuccessGreen
+                                    )
+                                }
+                            }
+                        } else {
+                            Button(
+                                onClick = { showDatePickerDialog = true },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = WarningAmber,
+                                    contentColor = OnWarningAmber
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("select_delivery_date_button")
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Text("اضغط لاختيار موعد التسليم 📅", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+
+                            Text(
+                                text = "⚠️ يرجى اختيار تاريخ أولاً لتمكين إصدار الفاتورة.",
+                                color = ErrorRed,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
                             )
                         }
                     }
@@ -1370,6 +1689,11 @@ fun OrderAllocationScreen(
                     onClick = {
                         if (totalShippedAmount <= 0) {
                             Toast.makeText(context, "عذراً، يجب شحن وتخصيص كرتون واحد على الأقل لإصدار الفاتورة.", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        if (selectedDateMillis == null) {
+                            Toast.makeText(context, "⚠️ يرجى اختيار تاريخ التسليم المتوقع أولاً.", Toast.LENGTH_LONG).show()
                             return@Button
                         }
 
@@ -1419,6 +1743,7 @@ fun OrderAllocationScreen(
                             newStatus = calculatedStatus,
                             invoice = invoice,
                             clientId = order.clientId,
+                            scheduledDeliveryDate = selectedDateMillis!!,
                             onSuccess = {
                                 isSubmitting = false
                                 Toast.makeText(context, "✅ تم شحن وتجهيز الطلب جزئياً وتوليد الفاتورة بنجاح وتحميلها على حساب العميل!", Toast.LENGTH_LONG).show()
@@ -1431,7 +1756,7 @@ fun OrderAllocationScreen(
                         )
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (linesToDisplay.any { (shippedQuantities[it.lineId]?.toIntOrNull() ?: 0) < it.requestedQty }) Color(0xFFF59E0B) else MedGreenPrimary,
+                        containerColor = if (selectedDateMillis == null) Color.Gray else if (linesToDisplay.any { (shippedQuantities[it.lineId]?.toIntOrNull() ?: 0) < it.requestedQty }) Color(0xFFF59E0B) else SuccessGreen,
                         contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(10.dp),
@@ -1439,7 +1764,7 @@ fun OrderAllocationScreen(
                         .fillMaxWidth()
                         .height(48.dp)
                         .testTag("allocate_and_invoice_button"),
-                    enabled = !isSubmitting
+                    enabled = !isSubmitting && selectedDateMillis != null
                 ) {
                     if (isSubmitting) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
@@ -1460,6 +1785,162 @@ fun OrderAllocationScreen(
             item {
                 Spacer(modifier = Modifier.height(24.dp))
             }
+        }
+    }
+
+    if (showManualTransferDialog) {
+        val clientAddr = clientAddresses.find { it.isDefault } ?: clientAddresses.firstOrNull()
+        AlertDialog(
+            onDismissRequest = { showManualTransferDialog = false },
+            title = {
+                Text(
+                    text = "اختر الفرع البديل لإعادة التوجيه 🏬",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Right,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = if (transferType == "full") "سيتم تحويل كامل هذا الطلب ليتلقاه ويوثقه الفرع المختار فوراً."
+                               else "سيتم فصل الأصناف المحددة في طلب فرعي جديد وتوجيهه للفرع المختار.",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Right,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    if (branches.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                            Text("لا توجد فروع بديلة متوفرة", color = Color.Gray, fontSize = 12.sp)
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            branches.forEach { branch ->
+                                val distance = if (clientAddr != null) {
+                                    FirebaseService.calculateDistanceKm(
+                                        clientAddr.latitude,
+                                        clientAddr.longitude,
+                                        branch.latitude,
+                                        branch.longitude
+                                    )
+                                } else {
+                                    null
+                                }
+                                
+                                Card(
+                                    onClick = {
+                                        showManualTransferDialog = false
+                                        isTransferring = true
+                                        if (transferType == "full") {
+                                            FirebaseService.transferFullOrder(order.orderId, branch.branchId) { success ->
+                                                isTransferring = false
+                                                if (success) {
+                                                    Toast.makeText(context, "✅ تم تحويل الطلب بالكامل بنجاح إلى فرع ${branch.branchName}", Toast.LENGTH_LONG).show()
+                                                    onSuccess()
+                                                } else {
+                                                    Toast.makeText(context, "❌ فشل تحويل الطلب", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        } else {
+                                            val lineSkus = selectedSkusForTransfer.toList()
+                                            val selectedNames = linesToDisplay.filter { it.product.sku in lineSkus }.map { it.product.commercialName }
+                                            FirebaseService.transferPartialOrder(order.orderId, lineSkus, branch.branchId) { success ->
+                                                isTransferring = false
+                                                if (success) {
+                                                    Toast.makeText(context, "✅ تم تحويل الأصناف المحددة (${selectedNames.joinToString()}) بنجاح إلى فرع ${branch.branchName}", Toast.LENGTH_LONG).show()
+                                                    onSuccess()
+                                                } else {
+                                                    Toast.makeText(context, "❌ فشل التحويل الجزئي", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                    },
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("transfer_branch_option_${branch.branchId}")
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Text(branch.branchName, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF0F172A))
+                                            Text("${branch.governorate} - ${branch.city}", fontSize = 11.sp, color = Color(0xFF64748B))
+                                        }
+                                        
+                                        Box(
+                                            modifier = Modifier
+                                                .background(MedBluePrimary.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = if (distance != null) "${String.format("%.1f", distance)} كم 📍" else "الموقع غير متوفر",
+                                                color = MedBluePrimary,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(
+                    onClick = { showManualTransferDialog = false },
+                    modifier = Modifier.testTag("dismiss_transfer_dialog_btn")
+                ) {
+                    Text("إلغاء", color = Color.Gray, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    if (showDatePickerDialog) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePickerDialog = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedDateMillis = datePickerState.selectedDateMillis
+                        showDatePickerDialog = false
+                    },
+                    modifier = Modifier.testTag("confirm_delivery_date_btn")
+                ) {
+                    Text("موافق", color = BrandPrimary, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDatePickerDialog = false },
+                    modifier = Modifier.testTag("cancel_delivery_date_btn")
+                ) {
+                    Text("إلغاء", color = Color.Gray)
+                }
+            }
+        ) {
+            DatePicker(
+                state = datePickerState,
+                showModeToggle = false
+            )
         }
     }
 }

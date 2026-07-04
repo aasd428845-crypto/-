@@ -244,20 +244,29 @@ fun MainAppContainer() {
 
         when (loggedUser.role) {
             "company_director" -> {
-                if (directorScreenState == "catalog_management") {
-                    DirectorCatalogManagementScreen(
-                        currentUser = loggedUser,
-                        onNavigateBack = { directorScreenState = "dashboard" }
-                    )
-                } else {
-                    DirectorDashboardScreen(
-                        currentUser = loggedUser,
-                        onLogout = {
-                            directorScreenState = "dashboard"
-                            userLoggedIn = null
-                        },
-                        onNavigateToCatalog = { directorScreenState = "catalog_management" }
-                    )
+                when (directorScreenState) {
+                    "catalog_management" -> {
+                        DirectorCatalogManagementScreen(
+                            currentUser = loggedUser,
+                            onNavigateBack = { directorScreenState = "dashboard" }
+                        )
+                    }
+                    "cross_branch_inventory" -> {
+                        CrossBranchInventoryScreen(
+                            onNavigateBack = { directorScreenState = "dashboard" }
+                        )
+                    }
+                    else -> {
+                        DirectorDashboardScreen(
+                            currentUser = loggedUser,
+                            onLogout = {
+                                directorScreenState = "dashboard"
+                                userLoggedIn = null
+                            },
+                            onNavigateToCatalog = { directorScreenState = "catalog_management" },
+                            onNavigateToCrossBranchInventory = { directorScreenState = "cross_branch_inventory" }
+                        )
+                    }
                 }
             }
             "branch_manager" -> {

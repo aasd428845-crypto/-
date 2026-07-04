@@ -34,8 +34,14 @@ import com.example.model.PaymentStatus
 import com.example.model.PaymentTerms
 import com.example.model.ClientAccount
 import com.example.model.OrderStatus
+import com.example.model.PharmaProduct
+import com.example.model.PromotionalOffer
 import com.example.service.FirebaseService
 import com.example.ui.theme.*
+import com.example.utils.calculateReorderSuggestions
+import com.example.utils.ReorderUrgency
+import com.example.utils.ReorderSuggestion
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 
@@ -69,6 +75,8 @@ fun ClientScreen(
 
     // Lists and Financial States
     var myOrders by remember { mutableStateOf<List<Order>>(emptyList()) }
+    var pharmaProducts by remember { mutableStateOf<List<PharmaProduct>>(emptyList()) }
+    var activePromotions by remember { mutableStateOf<List<PromotionalOffer>>(emptyList()) }
     var activeOffersMap by remember { mutableStateOf<Map<String, List<BranchOffer>>>(emptyMap()) }
     var selectedOrderForOffers by remember { mutableStateOf<Order?>(null) }
     var showOffersDialog by remember { mutableStateOf(false) }
@@ -107,6 +115,16 @@ fun ClientScreen(
             if (account != null) {
                 clientAccountState = account
             }
+        }
+
+        // Fetch pharma products catalog
+        FirebaseService.getPharmaProducts { products ->
+            pharmaProducts = products
+        }
+
+        // Fetch active promotions
+        FirebaseService.getActiveOffers(currentUser.governorate) { promotions ->
+            activePromotions = promotions
         }
     }
 
@@ -330,6 +348,226 @@ fun ClientScreen(
                                             }
                                         }
 
+                                        if (activePromotions.isNotEmpty()) {
+                                            item {
+                                                Column(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalAlignment = Alignment.Start
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Text(
+                                                            text = "📣 عروض ترويجية حصرية وحملات خصم",
+                                                            fontSize = 14.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = OnSurfaceDark
+                                                        )
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .background(WarningAmber.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                        ) {
+                                                            Text(
+                                                                text = "مباشر من المندوب",
+                                                                color = WarningAmber,
+                                                                fontSize = 10.sp,
+                                                                fontWeight = FontWeight.Bold
+                                                            )
+                                                        }
+                                                    }
+                                                    Spacer(modifier = Modifier.height(4.dp))
+                                                    Text(
+                                                        text = "وفر الآن مع أسعار مخفضة وخصومات مباشرة من فروع الشفاء لطلبك القادم:",
+                                                        fontSize = 11.sp,
+                                                        color = TextSecondaryGray,
+                                                        textAlign = TextAlign.Right
+                                                     )
+                                                    Spacer(modifier = Modifier.height(10.dp))
+                                                    LazyRow(
+                                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                                        contentPadding = PaddingValues(vertical = 4.dp)
+                                                    ) {
+                                                        items(activePromotions) { offer ->
+                                                            val product = pharmaProducts.find { it.productId == offer.productId }
+                                                            Card(
+                                                                modifier = Modifier
+                                                                    .width(280.dp)
+                                                                    .border(
+                                                                        width = 1.dp,
+                                                                        color = BrandPrimary.copy(alpha = 0.2f),
+                                                                        shape = RoundedCornerShape(16.dp)
+                                                                    ),
+                                                                shape = RoundedCornerShape(16.dp),
+                                                                colors = CardDefaults.cardColors(
+                                                                    containerColor = Color.White
+                                                                ),
+                                                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                                            ) {
+                                                                Column(
+                                                                    modifier = Modifier.padding(14.dp),
+                                                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                                ) {
+                                                                    Row(
+                                                                        modifier = Modifier.fillMaxWidth(),
+                                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                                        verticalAlignment = Alignment.Top
+                                                                    ) {
+                                                                        Column(modifier = Modifier.weight(1f)) {
+                                                                            Text(
+                                                                                text = offer.title,
+                                                                                fontWeight = FontWeight.Bold,
+                                                                                fontSize = 13.sp,
+                                                                                color = OnSurfaceDark,
+                                                                                maxLines = 1
+                                                                            )
+                                                                            Text(
+                                                                                text = offer.productName.ifBlank { product?.commercialName ?: "منتج دوائي" },
+                                                                                fontWeight = FontWeight.SemiBold,
+                                                                                fontSize = 11.sp,
+                                                                                color = TextSecondaryGray,
+                                                                                maxLines = 1
+                                                                            )
+                                                                        }
+                                                                        
+                                                                        if (offer.discountPercent > 0) {
+                                                                            Box(
+                                                                                modifier = Modifier
+                                                                                    .background(ErrorRed.copy(alpha = 0.12f), RoundedCornerShape(8.dp))
+                                                                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                                            ) {
+                                                                                Text(
+                                                                                    text = "خصم ${offer.discountPercent.toInt()}% 🏷️",
+                                                                                    color = ErrorRed,
+                                                                                    fontWeight = FontWeight.Bold,
+                                                                                    fontSize = 10.sp
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+
+                                                                    Text(
+                                                                        text = offer.description,
+                                                                        fontSize = 11.sp,
+                                                                        color = TextSecondaryGray,
+                                                                        lineHeight = 15.sp,
+                                                                        maxLines = 2
+                                                                    )
+
+                                                                    Row(
+                                                                        modifier = Modifier.fillMaxWidth(),
+                                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                                        verticalAlignment = Alignment.CenterVertically
+                                                                    ) {
+                                                                        if (product != null) {
+                                                                            val promoPrice = if (offer.specialPrice > 0.0) offer.specialPrice else product.price * (1.0 - offer.discountPercent / 100.0)
+                                                                            Column {
+                                                                                Text(
+                                                                                    text = "السعر الحالي: ${promoPrice.toInt()} ر.ي",
+                                                                                    fontWeight = FontWeight.ExtraBold,
+                                                                                    fontSize = 13.sp,
+                                                                                    color = MedGreenPrimary
+                                                                                )
+                                                                                Text(
+                                                                                    text = "السعر الأصلي: ${product.price.toInt()} ر.ي",
+                                                                                    fontSize = 10.sp,
+                                                                                    color = TextSecondaryGray,
+                                                                                    style = androidx.compose.ui.text.TextStyle(
+                                                                                        textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                                                                    )
+                                                                                )
+                                                                            }
+                                                                        } else {
+                                                                            if (offer.specialPrice > 0.0) {
+                                                                                Text(
+                                                                                    text = "سعر خاص: ${offer.specialPrice.toInt()} ر.ي",
+                                                                                    fontWeight = FontWeight.ExtraBold,
+                                                                                    fontSize = 13.sp,
+                                                                                    color = MedGreenPrimary
+                                                                                )
+                                                                            }
+                                                                        }
+
+                                                                        if (offer.targetGovernorate.isNotEmpty()) {
+                                                                            Box(
+                                                                                modifier = Modifier
+                                                                                    .background(MedBluePrimary.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                                                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                                            ) {
+                                                                                Text(
+                                                                                    text = "📍 ${offer.targetGovernorate}",
+                                                                                    color = MedBluePrimary,
+                                                                                    fontSize = 9.sp,
+                                                                                    fontWeight = FontWeight.Bold
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+
+                                                                    Button(
+                                                                        onClick = {
+                                                                            val prod = product ?: PharmaProduct(
+                                                                                productId = offer.productId,
+                                                                                commercialName = offer.productName,
+                                                                                price = offer.specialPrice
+                                                                            )
+                                                                            val finalPrice = if (offer.specialPrice > 0.0) offer.specialPrice else prod.price * (1.0 - offer.discountPercent / 100.0)
+                                                                            val existingIdx = cartItems.indexOfFirst { it.product.productId == prod.productId }
+                                                                            if (existingIdx != -1) {
+                                                                                val existing = cartItems[existingIdx]
+                                                                                cartItems[existingIdx] = existing.copy(quantity = existing.quantity + 1, addedPrice = finalPrice)
+                                                                            } else {
+                                                                                cartItems.add(
+                                                                                    CartItem(
+                                                                                        product = prod.copy(price = finalPrice),
+                                                                                        quantity = 1,
+                                                                                        addedPrice = finalPrice
+                                                                                    )
+                                                                                )
+                                                                            }
+                                                                            Toast.makeText(context, "تمت إضافة العرض لـ ${prod.commercialName} إلى السلة بنجاح!", Toast.LENGTH_SHORT).show()
+                                                                        },
+                                                                        colors = ButtonDefaults.buttonColors(
+                                                                            containerColor = MedGreenPrimary,
+                                                                            contentColor = Color.White
+                                                                        ),
+                                                                        shape = RoundedCornerShape(10.dp),
+                                                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                                                        modifier = Modifier
+                                                                            .fillMaxWidth()
+                                                                            .height(34.dp)
+                                                                            .testTag("add_promo_to_cart_${offer.offerId}")
+                                                                    ) {
+                                                                        Row(
+                                                                            horizontalArrangement = Arrangement.Center,
+                                                                            verticalAlignment = Alignment.CenterVertically
+                                                                        ) {
+                                                                            Icon(
+                                                                                Icons.Default.AddShoppingCart,
+                                                                                contentDescription = null,
+                                                                                tint = Color.White,
+                                                                                modifier = Modifier.size(14.dp)
+                                                                            )
+                                                                            Spacer(modifier = Modifier.width(6.dp))
+                                                                            Text(
+                                                                                text = "استفد من العرض واطلب الآن",
+                                                                                fontSize = 11.sp,
+                                                                                fontWeight = FontWeight.Bold,
+                                                                                color = Color.White
+                                                                            )
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                }
+                                            }
+                                        }
+
                                         // Stacked high fidelity action triggers
                                         item {
                                             Card(
@@ -444,12 +682,167 @@ fun ClientScreen(
                                             }
                                         }
                                     } else {
-                                        LazyColumn(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(16.dp),
-                                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
+                                         val suggestions = remember(myOrders, pharmaProducts) {
+                                             calculateReorderSuggestions(myOrders, pharmaProducts)
+                                         }
+                                         LazyColumn(
+                                             modifier = Modifier
+                                                 .fillMaxSize()
+                                                 .padding(16.dp),
+                                             verticalArrangement = Arrangement.spacedBy(12.dp)
+                                         ) {
+                                             if (suggestions.isNotEmpty()) {
+                                                item {
+                                                    Text(
+                                                        text = "مرحباً بك مجدداً، " + currentUser.orgName + " 👋",
+                                                        fontSize = 15.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = OnSurfaceDark,
+                                                        modifier = Modifier.padding(bottom = 6.dp)
+                                                    )
+                                                    Card(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(bottom = 8.dp),
+                                                        shape = RoundedCornerShape(16.dp),
+                                                        colors = CardDefaults.cardColors(
+                                                            containerColor = Color.White
+                                                        ),
+                                                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                                    ) {
+                                                        Column(
+                                                            modifier = Modifier.padding(16.dp),
+                                                            horizontalAlignment = Alignment.Start
+                                                        ) {
+                                                            Text(
+                                                                text = "🔔 قد تحتاج إعادة طلب هذه الأصناف قريباً",
+                                                                fontSize = 14.sp,
+                                                                fontWeight = FontWeight.ExtraBold,
+                                                                color = OnSurfaceDark
+                                                            )
+                                                            Spacer(modifier = Modifier.height(4.dp))
+                                                            Text(
+                                                                text = "توقعات ذكية بناءً على نمط استهلاكك ونفاذ المخزون المتوقع:",
+                                                                fontSize = 11.sp,
+                                                                color = TextSecondaryGray
+                                                            )
+                                                            Spacer(modifier = Modifier.height(12.dp))
+                                                            LazyRow(
+                                                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                                                contentPadding = PaddingValues(vertical = 4.dp)
+                                                            ) {
+                                                                items(suggestions) { suggestion ->
+                                                                    val product = suggestion.product
+                                                                    Card(
+                                                                        modifier = Modifier
+                                                                            .width(240.dp)
+                                                                            .border(
+                                                                                width = 1.dp,
+                                                                                color = if (suggestion.urgency == ReorderUrgency.DUE_NOW) ErrorRed.copy(alpha = 0.3f) else WarningAmber.copy(alpha = 0.3f),
+                                                                                shape = RoundedCornerShape(12.dp)
+                                                                            ),
+                                                                        shape = RoundedCornerShape(12.dp),
+                                                                        colors = CardDefaults.cardColors(
+                                                                            containerColor = if (suggestion.urgency == ReorderUrgency.DUE_NOW) ErrorRed.copy(alpha = 0.03f) else WarningAmber.copy(alpha = 0.03f)
+                                                                        )
+                                                                    ) {
+                                                                        Column(
+                                                                            modifier = Modifier.padding(12.dp),
+                                                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                                        ) {
+                                                                            Row(
+                                                                                modifier = Modifier.fillMaxWidth(),
+                                                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                                                verticalAlignment = Alignment.CenterVertically
+                                                                            ) {
+                                                                                Text(
+                                                                                    text = product.commercialName,
+                                                                                    fontWeight = FontWeight.Bold,
+                                                                                    fontSize = 13.sp,
+                                                                                    color = OnSurfaceDark,
+                                                                                    maxLines = 1,
+                                                                                    modifier = Modifier.weight(1f)
+                                                                                )
+                                                                                val (urgencyText, urgencyColor) = if (suggestion.urgency == ReorderUrgency.DUE_NOW) {
+                                                                                    Pair("مطلوب الآن ⚠️", ErrorRed)
+                                                                                } else {
+                                                                                    Pair("قريباً ⏳", WarningAmber)
+                                                                                }
+                                                                                Box(
+                                                                                    modifier = Modifier
+                                                                                        .background(urgencyColor.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                                                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                                                ) {
+                                                                                    Text(
+                                                                                        text = urgencyText,
+                                                                                        color = urgencyColor,
+                                                                                        fontWeight = FontWeight.Bold,
+                                                                                        fontSize = 9.sp
+                                                                                    )
+                                                                                }
+                                                                            }
+                                                                            Text(
+                                                                                text = "عادة تطلبونه كل " + suggestion.avgIntervalDays + " يوم، آخر طلب قبل " + suggestion.daysSinceLastOrder + " يوم",
+                                                                                fontSize = 10.sp,
+                                                                                color = TextSecondaryGray,
+                                                                                lineHeight = 14.sp
+                                                                            )
+                                                                            Button(
+                                                                                onClick = {
+                                                                                    val existingIdx = cartItems.indexOfFirst { it.product.productId == product.productId }
+                                                                                    if (existingIdx != -1) {
+                                                                                        val existing = cartItems[existingIdx]
+                                                                                        cartItems[existingIdx] = existing.copy(quantity = existing.quantity + suggestion.suggestedQuantity)
+                                                                                    } else {
+                                                                                        cartItems.add(
+                                                                                            CartItem(
+                                                                                                product = product,
+                                                                                                quantity = suggestion.suggestedQuantity,
+                                                                                                addedPrice = product.price
+                                                                                            )
+                                                                                        )
+                                                                                    }
+                                                                                    Toast.makeText(context, "تمت إضافة " + product.commercialName + " إلى السلة بنجاح!", Toast.LENGTH_SHORT).show()
+                                                                                },
+                                                                                colors = ButtonDefaults.buttonColors(
+                                                                                    containerColor = BrandPrimary,
+                                                                                    contentColor = OnBrandPrimary
+                                                                                ),
+                                                                                shape = RoundedCornerShape(8.dp),
+                                                                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                                                                modifier = Modifier
+                                                                                    .fillMaxWidth()
+                                                                                    .height(32.dp)
+                                                                                    .testTag("add_suggested_" + product.productId)
+                                                                            ) {
+                                                                                Row(
+                                                                                    horizontalArrangement = Arrangement.Center,
+                                                                                    verticalAlignment = Alignment.CenterVertically
+                                                                                ) {
+                                                                                    Icon(
+                                                                                        Icons.Default.AddShoppingCart,
+                                                                                        contentDescription = null,
+                                                                                        tint = OnBrandPrimary,
+                                                                                        modifier = Modifier.size(12.dp)
+                                                                                    )
+                                                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                                                    Text(
+                                                                                        text = "أضف للسلة (" + suggestion.suggestedQuantity + ") ➕",
+                                                                                        fontSize = 10.sp,
+                                                                                        fontWeight = FontWeight.Bold,
+                                                                                        color = OnBrandPrimary
+                                                                                    )
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
                                             items(myOrders) { order ->
                                                 val offers = activeOffersMap[order.orderId] ?: emptyList()
 

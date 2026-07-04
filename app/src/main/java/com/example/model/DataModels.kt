@@ -160,7 +160,8 @@ data class PharmaProduct(
     val unitType: String = "Box", // نوع تعبئة الوحدة الصيدلانية (Box, Ampoule, Bottle, Vial)
     val unitsPerBox: Int = 1, // عدد القطع أو الشرائط أو الأمبولات داخل الصندوق الواحد
     val price: Double = 0.0, // سعر البيع الأساسي المعتمد للصيدليات والمستشفيات
-    val description: String = "" // الوصف والتحذيرات الدوائية المرافقة
+    val description: String = "", // الوصف والتحذيرات الدوائية المرافقة
+    val isActive: Boolean = true
 )
 
 /**
@@ -273,7 +274,9 @@ data class Order(
     val price: Double = 0.0,
     val quantity: Int = 0,
     val deliveryMethod: String = "", // "self" or "platform"
-    val deliveryScheduledDate: String = ""
+    val deliveryScheduledDate: String = "",
+    val parentOrderId: String = "",       // فارغ في الطلب الأصلي، يشير لمعرف الطلب الأصلي في أي "طلب فرعي" ناتج عن تحويل جزئي
+    val scheduledDeliveryDate: Long = 0L // يُحدَّد لاحقاً في الجزء ج
 )
 
 
@@ -545,4 +548,25 @@ data class WarehouseInventoryItem(
     val expiryDate: String = "",
     val branchId: String = ""
 )
+
+// ==========================================
+// 📣 نظام العروض الترويجية الذكية (Promotional Offers)
+// ==========================================
+
+@Serializable
+data class PromotionalOffer(
+    val offerId: String = "",
+    val productId: String = "",       // يربط بـ PharmaProduct.productId
+    val productName: String = "",     // نسخة مخزّنة للعرض السريع بدون join
+    val title: String = "",
+    val description: String = "",
+    val discountPercent: Double = 0.0,   // مثال: 15.0 يعني خصم 15%
+    val specialPrice: Double = 0.0,      // اختياري: سعر خاص مباشر بدل النسبة (استخدم الأكبر أولوية إن وُجد)
+    val startDate: Long = 0L,
+    val endDate: Long = 0L,
+    val targetGovernorate: String = "",  // فارغ = يشمل كل المحافظات
+    val isActive: Boolean = true,
+    val createdAt: Long = 0L
+)
+
 

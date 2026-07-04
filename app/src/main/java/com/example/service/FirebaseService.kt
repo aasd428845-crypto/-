@@ -1174,6 +1174,7 @@ object FirebaseService {
         newStatus: OrderStatus,
         invoice: Invoice,
         clientId: String,
+        scheduledDeliveryDate: Long,
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
@@ -1191,7 +1192,8 @@ object FirebaseService {
                 orderLines = updatedLines,
                 orderStatus = newStatus,
                 status = statusString,
-                totalAmount = invoice.totalAmount
+                totalAmount = invoice.totalAmount,
+                scheduledDeliveryDate = scheduledDeliveryDate
             )
         }
 
@@ -1213,7 +1215,8 @@ object FirebaseService {
             batch.update(orderRef, mapOf(
                 "orderLines" to updatedLines,
                 "status" to statusString,
-                "totalAmount" to invoice.totalAmount
+                "totalAmount" to invoice.totalAmount,
+                "scheduledDeliveryDate" to scheduledDeliveryDate
             ))
 
             val invoiceRef = db!!.collection("invoices").document(invoice.invoiceId)
@@ -1513,32 +1516,484 @@ object FirebaseService {
     )
 
     fun getWarehouseInventory(branchId: String, onResult: (List<WarehouseInventoryItem>) -> Unit) {
-        val mapped = mockWarehouseInventory.map { it.copy(branchId = branchId) }
-        onResult(mapped)
+        getPharmaProducts { centralProducts ->
+            val activeProducts = centralProducts.filter { it.isActive }
+            
+            if (db != null) {
+                db!!.collection("warehouse_inventory")
+                    .whereEqualTo("branchId", branchId)
+                    .get()
+                    .addOnSuccessListener { snapshot ->
+                        val inventoryItems = snapshot.toObjects(WarehouseInventoryItem::class.java)
+                        val inventoryMap = inventoryItems.associateBy { it.sku }
+
+                        val mergedList = activeProducts.map { product ->
+                            val existing = inventoryMap[product.sku]
+                            WarehouseInventoryItem(
+                                sku = product.sku,
+                                name = product.commercialName,
+                                dosageForm = product.dosageForm.name,
+                                availableQuantity = existing?.availableQuantity ?: 0,
+                                expiryDate = existing?.expiryDate ?: "2028-12-31",
+                                branchId = branchId
+                            )
+                        }
+                        onResult(mergedList)
+                    }
+                    .addOnFailureListener {
+                        // Fallback using memory
+                        val localBranchInventory = mockWarehouseInventory.filter { it.branchId == branchId }
+                        val inventoryMap = localBranchInventory.associateBy { it.sku }
+                        val mergedList = activeProducts.map { product ->
+                            val existing = inventoryMap[product.sku]
+                            WarehouseInventoryItem(
+                                sku = product.sku,
+                                name = product.commercialName,
+                                dosageForm = product.dosageForm.name,
+                                availableQuantity = existing?.availableQuantity ?: 0,
+                                expiryDate = existing?.expiryDate ?: "2028-12-31",
+                                branchId = branchId
+                            )
+                        }
+                        onResult(mergedList)
+                    }
+            } else {
+                val localBranchInventory = mockWarehouseInventory.filter { it.branchId == branchId }
+                val inventoryMap = localBranchInventory.associateBy { it.sku }
+                val mergedList = activeProducts.map { product ->
+                    val existing = inventoryMap[product.sku]
+                    WarehouseInventoryItem(
+                        sku = product.sku,
+                        name = product.commercialName,
+                        dosageForm = product.dosageForm.name,
+                        availableQuantity = existing?.availableQuantity ?: 0,
+                        expiryDate = existing?.expiryDate ?: "2028-12-31",
+                        branchId = branchId
+                    )
+                }
+                onResult(mergedList)
+            }
+        }
     }
 
     fun updateInventoryQuantity(sku: String, addedQty: Int) {
-        val index = mockWarehouseInventory.indexOfFirst { it.sku == sku }
-        if (index != -1) {
-            val currentItem = mockWarehouseInventory[index]
-            val newQty = (currentItem.availableQuantity + addedQty).coerceAtLeast(0)
-            mockWarehouseInventory[index] = currentItem.copy(availableQuantity = newQty)
+        updateInventoryQuantity("branch_sanaa", sku, addedQty, "") {}
+    }
+
+    fun updateInventoryQuantity(branchId: String, sku: String, addedQty: Int, expiryDate: String, onResult: (Boolean) -> Unit) {
+        getPharmaProducts { products ->
+            val product = products.find { it.sku == sku }
+            val name = product?.commercialName ?: "مستحضر طبي"
+            val dosageStr = product?.dosageForm?.name ?: "TABLET"
+
+            if (db != null) {
+                val docRef = db!!.collection("warehouse_inventory").document("${branchId}_${sku}")
+                docRef.get()
+                    .addOnSuccessListener { docSnapshot ->
+                        val currentItem = if (docSnapshot.exists()) {
+                            docSnapshot.toObject(WarehouseInventoryItem::class.java)
+                        } else {
+                            null
+                        }
+
+                        val currentQty = currentItem?.availableQuantity ?: 0
+                        val newQty = (currentQty + addedQty).coerceAtLeast(0)
+                        val finalExpiry = if (expiryDate.isNotEmpty()) expiryDate else (currentItem?.expiryDate ?: "2028-12-31")
+
+                        val updatedItem = WarehouseInventoryItem(
+                            sku = sku,
+                            name = name,
+                            dosageForm = dosageStr,
+                            availableQuantity = newQty,
+                            expiryDate = finalExpiry,
+                            branchId = branchId
+                        )
+
+                        docRef.set(updatedItem)
+                            .addOnSuccessListener {
+                                // Update local memory fallback list
+                                val index = mockWarehouseInventory.indexOfFirst { it.sku == sku && it.branchId == branchId }
+                                if (index != -1) {
+                                    mockWarehouseInventory[index] = updatedItem
+                                } else {
+                                    mockWarehouseInventory.add(updatedItem)
+                                }
+                                onResult(true)
+                            }
+                            .addOnFailureListener {
+                                onResult(false)
+                            }
+                    }
+                    .addOnFailureListener {
+                        onResult(false)
+                    }
+            } else {
+                val index = mockWarehouseInventory.indexOfFirst { it.sku == sku && it.branchId == branchId }
+                val currentItem = if (index != -1) mockWarehouseInventory[index] else null
+                val currentQty = currentItem?.availableQuantity ?: 0
+                val newQty = (currentQty + addedQty).coerceAtLeast(0)
+                val finalExpiry = if (expiryDate.isNotEmpty()) expiryDate else (currentItem?.expiryDate ?: "2028-12-31")
+
+                val updatedItem = WarehouseInventoryItem(
+                    sku = sku,
+                    name = name,
+                    dosageForm = dosageStr,
+                    availableQuantity = newQty,
+                    expiryDate = finalExpiry,
+                    branchId = branchId
+                )
+
+                if (index != -1) {
+                    mockWarehouseInventory[index] = updatedItem
+                } else {
+                    mockWarehouseInventory.add(updatedItem)
+                }
+                onResult(true)
+            }
         }
     }
 
-    fun updateInventoryQuantity(sku: String, addedQty: Int, expiryDate: String, onResult: (Boolean) -> Unit) {
-        val index = mockWarehouseInventory.indexOfFirst { it.sku == sku }
-        if (index != -1) {
-            val currentItem = mockWarehouseInventory[index]
-            val newQty = (currentItem.availableQuantity + addedQty).coerceAtLeast(0)
-            val updatedItem = currentItem.copy(
-                availableQuantity = newQty,
-                expiryDate = if (expiryDate.isNotEmpty()) expiryDate else currentItem.expiryDate
-            )
-            mockWarehouseInventory[index] = updatedItem
-            onResult(true)
+    // --- Promotional Offers Mock Data & Firestore Integration ---
+    val fallbackPromotionalOffers = mutableListOf<PromotionalOffer>(
+        PromotionalOffer(
+            offerId = "offer_1",
+            productId = "prod_1",
+            productName = "أموكسيسيلين 500 ملجم (أمبيسيل)",
+            title = "خصم الشفاء الخاص",
+            description = "عرض خاص بمناسبة فصل الصيف على مضاد يدكو الشهير",
+            discountPercent = 15.0,
+            specialPrice = 1275.0,
+            startDate = System.currentTimeMillis() - 86400000L * 2, // منذ يومين
+            endDate = System.currentTimeMillis() + 86400000L * 10,   // لـ 10 أيام قادمة
+            targetGovernorate = "", // الكل
+            isActive = true,
+            createdAt = System.currentTimeMillis()
+        ),
+        PromotionalOffer(
+            offerId = "offer_2",
+            productId = "prod_2",
+            productName = "إنسولين أكتRapid مبرد 💉",
+            title = "عرض العاصمة الخاص",
+            description = "سعر مخفض للمؤسسات الصحية في محافظة صنعاء",
+            discountPercent = 10.0,
+            specialPrice = 7650.0,
+            startDate = System.currentTimeMillis() - 86400000L,
+            endDate = System.currentTimeMillis() + 86400000L * 5,
+            targetGovernorate = "صنعاء", // مخصص لصنعاء
+            isActive = true,
+            createdAt = System.currentTimeMillis()
+        )
+    )
+
+    fun createOffer(offer: PromotionalOffer, onResult: (Boolean) -> Unit) {
+        val finalOffer = if (offer.offerId.isBlank()) {
+            offer.copy(offerId = "offer_" + System.currentTimeMillis())
         } else {
-            onResult(false)
+            offer
+        }
+        fallbackPromotionalOffers.add(finalOffer)
+        if (db != null) {
+            db!!.collection("promotional_offers").document(finalOffer.offerId).set(finalOffer)
+                .addOnSuccessListener { onResult(true) }
+                .addOnFailureListener { onResult(true) }
+        } else {
+            onResult(true)
+        }
+    }
+
+    fun updateOffer(offer: PromotionalOffer, onResult: (Boolean) -> Unit) {
+        val index = fallbackPromotionalOffers.indexOfFirst { it.offerId == offer.offerId }
+        if (index != -1) {
+            fallbackPromotionalOffers[index] = offer
+        } else {
+            fallbackPromotionalOffers.add(offer)
+        }
+        if (db != null) {
+            db!!.collection("promotional_offers").document(offer.offerId).set(offer)
+                .addOnSuccessListener { onResult(true) }
+                .addOnFailureListener { onResult(true) }
+        } else {
+            onResult(true)
+        }
+    }
+
+    fun deleteOffer(offerId: String, onResult: (Boolean) -> Unit) {
+        fallbackPromotionalOffers.removeAll { it.offerId == offerId }
+        if (db != null) {
+            db!!.collection("promotional_offers").document(offerId).delete()
+                .addOnSuccessListener { onResult(true) }
+                .addOnFailureListener { onResult(true) }
+        } else {
+            onResult(true)
+        }
+    }
+
+    fun getActiveOffers(governorate: String, onResult: (List<PromotionalOffer>) -> Unit) {
+        if (db != null) {
+            db!!.collection("promotional_offers")
+                .whereEqualTo("isActive", true)
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    val list = snapshot.toObjects(PromotionalOffer::class.java)
+                    if (list.isNotEmpty()) {
+                        val currentTime = System.currentTimeMillis()
+                        val filtered = list.filter { offer ->
+                            val isDateValid = currentTime >= offer.startDate && currentTime <= offer.endDate
+                            val isGovValid = offer.targetGovernorate.isBlank() || offer.targetGovernorate == governorate
+                            isDateValid && isGovValid
+                        }
+                        onResult(filtered)
+                    } else {
+                        // Seed Firestore
+                        fallbackPromotionalOffers.forEach { offer ->
+                            db!!.collection("promotional_offers").document(offer.offerId).set(offer)
+                        }
+                        val currentTime = System.currentTimeMillis()
+                        val filtered = fallbackPromotionalOffers.filter { offer ->
+                            val isDateValid = currentTime >= offer.startDate && currentTime <= offer.endDate
+                            val isGovValid = offer.targetGovernorate.isBlank() || offer.targetGovernorate == governorate
+                            offer.isActive && isDateValid && isGovValid
+                        }
+                        onResult(filtered)
+                    }
+                }
+                .addOnFailureListener {
+                    val currentTime = System.currentTimeMillis()
+                    val filtered = fallbackPromotionalOffers.filter { offer ->
+                        val isDateValid = currentTime >= offer.startDate && currentTime <= offer.endDate
+                        val isGovValid = offer.targetGovernorate.isBlank() || offer.targetGovernorate == governorate
+                        offer.isActive && isDateValid && isGovValid
+                    }
+                    onResult(filtered)
+                }
+        } else {
+            val currentTime = System.currentTimeMillis()
+            val filtered = fallbackPromotionalOffers.filter { offer ->
+                val isDateValid = currentTime >= offer.startDate && currentTime <= offer.endDate
+                val isGovValid = offer.targetGovernorate.isBlank() || offer.targetGovernorate == governorate
+                offer.isActive && isDateValid && isGovValid
+            }
+            onResult(filtered)
+        }
+    }
+
+    // تحويل يدوي أو تلقائي لكامل الطلب: يعيد توجيه targetBranches بالكامل لفرع جديد، الطلب يختفي من قائمة الفرع الحالي ويظهر عند الفرع الجديد فوراً
+    fun transferFullOrder(orderId: String, newBranchId: String, onResult: (Boolean) -> Unit) {
+        val idx = fallbackOrders.indexOfFirst { it.orderId == orderId }
+        if (idx != -1) {
+            val originalOrder = fallbackOrders[idx]
+            val updatedOrder = originalOrder.copy(targetBranches = listOf(newBranchId))
+            fallbackOrders[idx] = updatedOrder
+            
+            if (db != null) {
+                db!!.collection("orders").document(orderId).set(updatedOrder)
+                    .addOnSuccessListener { onResult(true) }
+                    .addOnFailureListener { onResult(false) }
+            } else {
+                onResult(true)
+            }
+        } else {
+            if (db != null) {
+                db!!.collection("orders").document(orderId).get()
+                    .addOnSuccessListener { doc ->
+                        val order = doc.toObject(Order::class.java)
+                        if (order != null) {
+                            val updatedOrder = order.copy(targetBranches = listOf(newBranchId))
+                            db!!.collection("orders").document(orderId).set(updatedOrder)
+                                .addOnSuccessListener {
+                                    fallbackOrders.add(updatedOrder)
+                                    onResult(true)
+                                }
+                                .addOnFailureListener { onResult(false) }
+                        } else {
+                            onResult(false)
+                        }
+                    }
+                    .addOnFailureListener { onResult(false) }
+            } else {
+                onResult(false)
+            }
+        }
+    }
+
+    // تحويل جزئي (يدوي أو تلقائي): ينشئ طلباً فرعياً جديداً يحوي فقط الأصناف المحوَّلة (orderLines مطابقة)، بـ targetBranches = [newBranchId] و parentOrderId = orderId الأصلي، ويحذف تلك الأصناف تحديداً من orderLines في الطلب الأصلي (يبقى الطلب الأصلي بباقي الأصناف فقط عند الفرع الحالي)
+    fun transferPartialOrder(orderId: String, lineSkus: List<String>, newBranchId: String, onResult: (Boolean) -> Unit) {
+        fun processOrderTransfer(originalOrder: Order, onDone: (Boolean) -> Unit) {
+            val linesToTransfer = originalOrder.orderLines.filter { it.product.sku in lineSkus }
+            val linesToKeep = originalOrder.orderLines.filter { it.product.sku !in lineSkus }
+            
+            if (linesToTransfer.isEmpty()) {
+                onDone(false)
+                return
+            }
+            
+            val newSubOrderId = "${originalOrder.orderId}_sub_${System.currentTimeMillis()}"
+            val subOrderTotal = linesToTransfer.sumOf { it.totalPrice }
+            val updatedOriginalTotal = linesToKeep.sumOf { it.totalPrice }
+            
+            val subOrder = originalOrder.copy(
+                orderId = newSubOrderId,
+                parentOrderId = originalOrder.orderId,
+                orderLines = linesToTransfer,
+                totalAmount = subOrderTotal,
+                targetBranches = listOf(newBranchId),
+                createdAt = System.currentTimeMillis()
+            )
+            
+            val updatedOriginalOrder = originalOrder.copy(
+                orderLines = linesToKeep,
+                totalAmount = updatedOriginalTotal
+            )
+            
+            // Update local memory list
+            val idx = fallbackOrders.indexOfFirst { it.orderId == originalOrder.orderId }
+            if (idx != -1) {
+                fallbackOrders[idx] = updatedOriginalOrder
+            }
+            fallbackOrders.add(subOrder)
+            
+            if (db != null) {
+                val batch = db!!.batch()
+                val originalRef = db!!.collection("orders").document(originalOrder.orderId)
+                val subRef = db!!.collection("orders").document(newSubOrderId)
+                
+                batch.set(originalRef, updatedOriginalOrder)
+                batch.set(subRef, subOrder)
+                
+                batch.commit()
+                    .addOnSuccessListener { onDone(true) }
+                    .addOnFailureListener { onDone(false) }
+            } else {
+                onDone(true)
+            }
+        }
+
+        val idx = fallbackOrders.indexOfFirst { it.orderId == orderId }
+        if (idx != -1) {
+            processOrderTransfer(fallbackOrders[idx], onResult)
+        } else {
+            if (db != null) {
+                db!!.collection("orders").document(orderId).get()
+                    .addOnSuccessListener { doc ->
+                        val order = doc.toObject(Order::class.java)
+                        if (order != null) {
+                            processOrderTransfer(order, onResult)
+                        } else {
+                            onResult(false)
+                        }
+                    }
+                    .addOnFailureListener { onResult(false) }
+            } else {
+                onResult(false)
+            }
+        }
+    }
+
+    // الخيار الذكي: يحسب أقرب فرع (باستخدام calculateDistanceKm الموجودة أصلاً) من بين كل الفروع عدا الفرع الحالي، الذي لديه مخزون كافٍ (من warehouse_inventory) لكل الأصناف المطلوبة (أو الأصناف الناقصة فقط حسب الوضع)، ويستدعي الدالة المناسبة أعلاه تلقائياً. إن لم يوجد أي فرع مطابق، أرجع خطأ واضحاً "لا يوجد فرع بديل متوفر لهذه الأصناف حالياً" ليتعامل معه مدير الفرع يدوياً.
+    fun smartTransferOrder(orderId: String, partialOnly: Boolean, onResult: (Boolean, String?) -> Unit) {
+        val oIdx = fallbackOrders.indexOfFirst { it.orderId == orderId }
+        if (oIdx == -1) {
+            onResult(false, "لا يوجد فرع بديل متوفر لهذه الأصناف حالياً")
+            return
+        }
+        val order = fallbackOrders[oIdx]
+        val currentBranchId = order.targetBranches.firstOrNull() ?: ""
+        
+        getUserAddresses(order.clientId) { addresses ->
+            val clientAddr = addresses.find { it.isDefault } ?: addresses.firstOrNull()
+            val clientLat = clientAddr?.latitude ?: 15.3482
+            val clientLng = clientAddr?.longitude ?: 44.2191
+            
+            getBranches { allBranches ->
+                val otherActiveBranches = allBranches.filter { it.isActive && it.branchId != currentBranchId }
+                if (otherActiveBranches.isEmpty()) {
+                    onResult(false, "لا توجد فروع أخرى نشطة متاحة للتحويل إليها")
+                    return@getBranches
+                }
+                
+                if (partialOnly) {
+                    getWarehouseInventory(currentBranchId) { currentInv ->
+                        val currentInvMap = currentInv.associateBy { it.sku }
+                        // Identify items where current branch has insufficient stock
+                        val shortageLines = order.orderLines.filter { line ->
+                            val available = currentInvMap[line.product.sku]?.availableQuantity ?: 0
+                            available < line.requestedQty
+                        }
+                        
+                        if (shortageLines.isEmpty()) {
+                            onResult(false, "كل المواد متوفرة بالفعل في هذا الفرع")
+                            return@getWarehouseInventory
+                        }
+                        
+                        val eligibleBranches = mutableListOf<Pair<Branch, Double>>()
+                        var completed = 0
+                        
+                        otherActiveBranches.forEach { branch ->
+                            getWarehouseInventory(branch.branchId) { branchInv ->
+                                val branchInvMap = branchInv.associateBy { it.sku }
+                                val hasSufficient = shortageLines.all { line ->
+                                    val available = branchInvMap[line.product.sku]?.availableQuantity ?: 0
+                                    available >= line.requestedQty
+                                }
+                                if (hasSufficient) {
+                                    val dist = calculateDistanceKm(clientLat, clientLng, branch.latitude, branch.longitude)
+                                    eligibleBranches.add(branch to dist)
+                                }
+                                completed++
+                                if (completed == otherActiveBranches.size) {
+                                    if (eligibleBranches.isEmpty()) {
+                                        onResult(false, "لا يوجد فرع بديل متوفر لهذه الأصناف حالياً")
+                                    } else {
+                                        val closest = eligibleBranches.minBy { it.second }.first
+                                        val lineSkus = shortageLines.map { it.product.sku }
+                                        transferPartialOrder(orderId, lineSkus, closest.branchId) { success ->
+                                            if (success) {
+                                                onResult(true, closest.branchName)
+                                            } else {
+                                                onResult(false, "فشل في إتمام عملية التحويل الجزئي")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Full transfer
+                    val eligibleBranches = mutableListOf<Pair<Branch, Double>>()
+                    var completed = 0
+                    
+                    otherActiveBranches.forEach { branch ->
+                        getWarehouseInventory(branch.branchId) { branchInv ->
+                            val branchInvMap = branchInv.associateBy { it.sku }
+                            val hasSufficient = order.orderLines.all { line ->
+                                val available = branchInvMap[line.product.sku]?.availableQuantity ?: 0
+                                available >= line.requestedQty
+                            }
+                            if (hasSufficient) {
+                                val dist = calculateDistanceKm(clientLat, clientLng, branch.latitude, branch.longitude)
+                                eligibleBranches.add(branch to dist)
+                            }
+                            completed++
+                            if (completed == otherActiveBranches.size) {
+                                if (eligibleBranches.isEmpty()) {
+                                    onResult(false, "لا يوجد فرع بديل متوفر لهذه الأصناف حالياً")
+                                } else {
+                                    val closest = eligibleBranches.minBy { it.second }.first
+                                    transferFullOrder(orderId, closest.branchId) { success ->
+                                        if (success) {
+                                            onResult(true, closest.branchName)
+                                        } else {
+                                            onResult(false, "فشل في إتمام عملية تحويل الطلب بالكامل")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
+

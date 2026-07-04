@@ -22,10 +22,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.BranchOffer
 import com.example.model.Order
+import com.example.model.Branch
+import com.example.model.OrderStatus
 import com.example.service.FirebaseService
 import com.example.ui.theme.MedBluePrimary
 import com.example.ui.theme.MedGreenPrimary
 import com.example.ui.theme.MedRedPrimary
+import com.example.ui.theme.SuccessGreen
+import com.example.ui.theme.OnSurfaceDark
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +43,18 @@ fun ClientOrderDetailScreen(
 ) {
     val acceptedOffer = remember(offers) {
         offers.find { it.status == "accepted" }
+    }
+
+    var subOrders by remember { mutableStateOf<List<Order>>(emptyList()) }
+    var branches by remember { mutableStateOf<List<Branch>>(emptyList()) }
+
+    LaunchedEffect(order.orderId) {
+        FirebaseService.getOrders { allOrders ->
+            subOrders = allOrders.filter { it.parentOrderId == order.orderId }
+        }
+        FirebaseService.getBranches { fetched ->
+            branches = fetched
+        }
     }
 
     Scaffold(
@@ -117,6 +136,55 @@ fun ClientOrderDetailScreen(
                 }
             }
 
+            // --- Expected Delivery Date Banner ---
+            if (order.scheduledDeliveryDate > 0L) {
+                item {
+                    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale("ar"))
+                    val dateStr = sdf.format(Date(order.scheduledDeliveryDate))
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = SuccessGreen.copy(alpha = 0.08f)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, SuccessGreen, RoundedCornerShape(12.dp))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(SuccessGreen.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocalShipping,
+                                    contentDescription = null,
+                                    tint = SuccessGreen,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = "🚚 موعد التسليم المتوقع",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = SuccessGreen
+                                )
+                                Text(
+                                    text = "موعد التسليم المتوقع: $dateStr",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = OnSurfaceDark
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // --- Order Content Details ---
             item {
                 Card(
@@ -158,6 +226,120 @@ fun ClientOrderDetailScreen(
                         ) {
                             Text("محافظة التسليم: ${order.clientGovernorate}", fontSize = 11.sp, color = Color.DarkGray)
                             Text("نوع البث: " + if (order.broadcastType == "all") "بث كامل لكافة الفروع" else "محدد جغرافياً للفروع القريبة", fontSize = 11.sp, color = Color.DarkGray)
+                        }
+                    }
+                }
+            }
+
+            // --- Sub-orders / Separate Shipments Section ---
+            if (subOrders.isNotEmpty()) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7)), // light warning/info background
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, Color(0xFFF59E0B), RoundedCornerShape(12.dp))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD97706),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    text = "📦 شحنات فرعية مضافة للطلب الرئيسي",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF92400E)
+                                )
+                            }
+
+                            Text(
+                                text = "تنبيه: بعض الأصناف في طلبك تم تحويلها لتصل بشحنة منفصلة من فرع آخر لضمان سرعة التسليم وتفادي نقص المخزون.",
+                                fontSize = 11.sp,
+                                color = Color(0xFFB45309)
+                            )
+
+                            Divider(color = Color(0xFFF59E0B).copy(alpha = 0.3f))
+
+                            subOrders.forEachIndexed { index, subOrder ->
+                                val targetBranchId = subOrder.targetBranches.firstOrNull() ?: ""
+                                val subBranch = branches.find { it.branchId == targetBranchId }
+                                val subBranchName = subBranch?.branchName ?: "فرع بديل"
+                                
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
+                                        .padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "شحنة فرعية #${index + 1} (${subBranchName})",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            color = Color(0xFF0F172A)
+                                        )
+                                        
+                                        // Status badge for this sub-order
+                                        val statusLabel = when (subOrder.orderStatus) {
+                                            is OrderStatus.Draft -> "مسودة"
+                                            is OrderStatus.Submitted -> "بانتظار التأكيد / التسعير"
+                                            is OrderStatus.Allocated -> "تم حجز وتجهيز المخزون ✅"
+                                            is OrderStatus.PartiallyShipped -> "شحن جزئي / كميات ناقصة ⚠️"
+                                            is OrderStatus.Invoiced -> "بانتظار الشحن والتوصيل 🚚"
+                                            is OrderStatus.Delivered -> "تم التسليم ومطابقة الشحنة 📦"
+                                            else -> "قيد المعالجة"
+                                        }
+                                        val badgeColor = when (subOrder.orderStatus) {
+                                            is OrderStatus.Delivered -> MedGreenPrimary
+                                            is OrderStatus.PartiallyShipped -> Color(0xFFD97706)
+                                            else -> MedBluePrimary
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .background(badgeColor.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = statusLabel,
+                                                color = badgeColor,
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+
+                                    // List items in this sub-order
+                                    val itemsList = subOrder.orderLines.map {
+                                        "${it.product.commercialName} (${it.requestedQty} كرتون)"
+                                    }.joinToString("، ")
+                                    
+                                    Text(
+                                        text = "الأصناف المحولة: $itemsList",
+                                        fontSize = 10.sp,
+                                        color = Color.DarkGray
+                                    )
+                                }
+                                
+                                if (index < subOrders.size - 1) {
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                }
+                            }
                         }
                     }
                 }

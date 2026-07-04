@@ -38,19 +38,26 @@ fun DirectorCatalogManagementScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var activeTab by remember { mutableStateOf("products") } // "products" or "promotions"
     var searchQuery by remember { mutableStateOf("") }
     var productsList by remember { mutableStateOf<List<PharmaProduct>>(emptyList()) }
+    var promoList by remember { mutableStateOf<List<PromotionalOffer>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
     // Dialog States
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedProductForEdit by remember { mutableStateOf<PharmaProduct?>(null) } // null means "Add New Product"
 
-    // Load pharma products
+    var showPromoEditDialog by remember { mutableStateOf(false) }
+    var selectedPromoForEdit by remember { mutableStateOf<PromotionalOffer?>(null) } // null means "Add New Promo"
+
+    // Load pharma products and promotional campaigns
     fun loadProducts() {
         isLoading = true
         FirebaseService.getPharmaProducts { products ->
             productsList = products
+            // Load promotions from the mock / Firestore system
+            promoList = FirebaseService.fallbackPromotionalOffers.toList()
             isLoading = false
         }
     }
@@ -63,6 +70,12 @@ fun DirectorCatalogManagementScreen(
         it.commercialName.contains(searchQuery, ignoreCase = true) ||
                 it.scientificName.contains(searchQuery, ignoreCase = true) ||
                 it.sku.contains(searchQuery, ignoreCase = true)
+    }
+
+    val filteredPromos = promoList.filter {
+        it.title.contains(searchQuery, ignoreCase = true) ||
+                it.productName.contains(searchQuery, ignoreCase = true) ||
+                it.description.contains(searchQuery, ignoreCase = true)
     }
 
     Scaffold(
@@ -99,20 +112,30 @@ fun DirectorCatalogManagementScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    selectedProductForEdit = null
-                    showEditDialog = true
+                    if (activeTab == "products") {
+                        selectedProductForEdit = null
+                        showEditDialog = true
+                    } else {
+                        selectedPromoForEdit = null
+                        showPromoEditDialog = true
+                    }
                 },
                 containerColor = BrandPrimary,
                 contentColor = OnBrandPrimary,
-                modifier = Modifier.testTag("add_product_fab")
+                modifier = Modifier.testTag("catalog_manage_fab")
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "إضافة دواء")
-                    Text("إضافة دواء 💊", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    if (activeTab == "products") {
+                        Icon(Icons.Default.Add, contentDescription = "إضافة دواء")
+                        Text("إضافة دواء 💊", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    } else {
+                        Icon(Icons.Default.Add, contentDescription = "إضافة عرض ترويجي")
+                        Text("إضافة عرض ترويجي 📣", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -123,6 +146,46 @@ fun DirectorCatalogManagementScreen(
                 .fillMaxSize()
                 .background(SurfaceLight)
         ) {
+            // Segmented tab navigation
+            TabRow(
+                selectedTabIndex = if (activeTab == "products") 0 else 1,
+                containerColor = Color.White,
+                contentColor = BrandPrimary
+            ) {
+                Tab(
+                    selected = activeTab == "products",
+                    onClick = { 
+                        activeTab = "products"
+                        searchQuery = ""
+                    },
+                    modifier = Modifier.testTag("tab_products")
+                ) {
+                    Text(
+                        text = "الأدوية والمستلزمات 💊",
+                        modifier = Modifier.padding(14.dp),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = if (activeTab == "products") BrandPrimary else TextSecondaryGray
+                    )
+                }
+                Tab(
+                    selected = activeTab == "promotions",
+                    onClick = { 
+                        activeTab = "promotions"
+                        searchQuery = ""
+                    },
+                    modifier = Modifier.testTag("tab_promotions")
+                ) {
+                    Text(
+                        text = "العروض والخصومات 📣",
+                        modifier = Modifier.padding(14.dp),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = if (activeTab == "promotions") BrandPrimary else TextSecondaryGray
+                    )
+                }
+            }
+
             // Search field
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -134,7 +197,13 @@ fun DirectorCatalogManagementScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("ابحث بالاسم، المادة الفعالة أو الـ SKU...", fontSize = 12.sp) },
+                        placeholder = { 
+                            Text(
+                                if (activeTab == "products") "ابحث بالاسم، المادة الفعالة أو الـ SKU..." 
+                                else "ابحث باسم العرض، المنتج أو الوصف...", 
+                                fontSize = 12.sp
+                            ) 
+                        },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondaryGray) },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
@@ -157,161 +226,329 @@ fun DirectorCatalogManagementScreen(
                 }
             }
 
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = BrandPrimary)
-                }
-            } else if (filteredProducts.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Default.Inventory2, contentDescription = null, modifier = Modifier.size(54.dp), tint = Color.LightGray)
-                        Text("لا توجد أصناف تطابق معايير البحث الحالية.", color = TextSecondaryGray, fontSize = 13.sp)
+            if (activeTab == "products") {
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = BrandPrimary)
                     }
-                }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxSize().weight(1f)
-                ) {
-                    items(filteredProducts, key = { it.productId }) { product ->
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            shape = RoundedCornerShape(10.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedProductForEdit = product
-                                    showEditDialog = true
-                                }
-                                .testTag("manage_product_item_${product.productId}")
-                        ) {
-                            Row(
+                } else if (filteredProducts.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Default.Inventory2, contentDescription = null, modifier = Modifier.size(54.dp), tint = Color.LightGray)
+                            Text("لا توجد أصناف تطابق معايير البحث الحالية.", color = TextSecondaryGray, fontSize = 13.sp)
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxSize().weight(1f)
+                    ) {
+                        items(filteredProducts, key = { it.productId }) { product ->
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                shape = RoundedCornerShape(10.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .clickable {
+                                        selectedProductForEdit = product
+                                        showEditDialog = true
+                                    }
+                                    .testTag("manage_product_item_${product.productId}")
                             ) {
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(
+                                                text = product.commercialName,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp,
+                                                color = BrandPrimary
+                                            )
+                                            if (product.isColdChain) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(Color(0xFFE0F2FE), RoundedCornerShape(4.dp))
+                                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                ) {
+                                                    Text("مبرد ❄️", color = Color(0xFF0284C7), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
+                                            if (product.isControlledSubstance) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(Color(0xFFFEE2E2), RoundedCornerShape(4.dp))
+                                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                ) {
+                                                    Text("مقيد ⚠️", color = ErrorRed, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
+                                        }
+
+                                        Text(
+                                            text = "المادة الفعالة: ${product.scientificName}",
+                                            fontSize = 10.sp,
+                                            color = TextSecondaryGray
+                                        )
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Text(
+                                                text = "المصنع: ${product.manufacturer}",
+                                                fontSize = 9.sp,
+                                                color = TextSecondaryGray
+                                            )
+                                            Text(
+                                                text = "التركيز: ${product.strength}",
+                                                fontSize = 9.sp,
+                                                color = TextSecondaryGray
+                                            )
+                                            Text(
+                                                text = "العبوة: ${product.unitType}",
+                                                fontSize = 9.sp,
+                                                color = TextSecondaryGray
+                                            )
+                                        }
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Text(
+                                                text = "SKU: ${product.sku}",
+                                                fontSize = 9.sp,
+                                                color = TextSecondaryGray,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                text = "NDC: ${product.ndcCode}",
+                                                fontSize = 9.sp,
+                                                color = TextSecondaryGray
+                                            )
+                                            Text(
+                                                text = "القطع بالعلبة: ${product.unitsPerBox}",
+                                                fontSize = 9.sp,
+                                                color = TextSecondaryGray
+                                            )
+                                        }
+                                    }
+
+                                    Column(
+                                        horizontalAlignment = Alignment.End,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Text(
-                                            text = product.commercialName,
-                                            fontWeight = FontWeight.Bold,
+                                            text = "${product.price} ريال",
+                                            fontWeight = FontWeight.ExtraBold,
                                             fontSize = 13.sp,
                                             color = BrandPrimary
                                         )
-                                        if (product.isColdChain) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .background(Color(0xFFE0F2FE), RoundedCornerShape(4.dp))
-                                                    .padding(horizontal = 4.dp, vertical = 1.dp)
+
+                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            IconButton(
+                                                onClick = {
+                                                    selectedProductForEdit = product
+                                                    showEditDialog = true
+                                                },
+                                                modifier = Modifier.size(32.dp)
                                             ) {
-                                                Text("مبرد ❄️", color = Color(0xFF0284C7), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                                Icon(Icons.Default.Edit, contentDescription = "تعديل", tint = WarningAmber, modifier = Modifier.size(16.dp))
+                                            }
+
+                                            IconButton(
+                                                onClick = {
+                                                    FirebaseService.deletePharmaProduct(product.productId) { success ->
+                                                        if (success) {
+                                                            Toast.makeText(context, "🗑️ تم حذف الصنف بنجاح", Toast.LENGTH_SHORT).show()
+                                                            loadProducts()
+                                                        }
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp).testTag("delete_product_${product.productId}")
+                                            ) {
+                                                Icon(Icons.Default.Delete, contentDescription = "حذف", tint = ErrorRed, modifier = Modifier.size(16.dp))
                                             }
                                         }
-                                        if (product.isControlledSubstance) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .background(Color(0xFFFEE2E2), RoundedCornerShape(4.dp))
-                                                    .padding(horizontal = 4.dp, vertical = 1.dp)
-                                            ) {
-                                                Text("مقيد ⚠️", color = ErrorRed, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                            }
-                                        }
-                                    }
-
-                                    Text(
-                                        text = "المادة الفعالة: ${product.scientificName}",
-                                        fontSize = 10.sp,
-                                        color = TextSecondaryGray
-                                    )
-
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Text(
-                                            text = "المصنع: ${product.manufacturer}",
-                                            fontSize = 9.sp,
-                                            color = TextSecondaryGray
-                                        )
-                                        Text(
-                                            text = "التركيز: ${product.strength}",
-                                            fontSize = 9.sp,
-                                            color = TextSecondaryGray
-                                        )
-                                        Text(
-                                            text = "العبوة: ${product.unitType}",
-                                            fontSize = 9.sp,
-                                            color = TextSecondaryGray
-                                        )
-                                    }
-
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Text(
-                                            text = "SKU: ${product.sku}",
-                                            fontSize = 9.sp,
-                                            color = TextSecondaryGray,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                        Text(
-                                            text = "NDC: ${product.ndcCode}",
-                                            fontSize = 9.sp,
-                                            color = TextSecondaryGray
-                                        )
-                                        Text(
-                                            text = "القطع بالعلبة: ${product.unitsPerBox}",
-                                            fontSize = 9.sp,
-                                            color = TextSecondaryGray
-                                        )
                                     }
                                 }
-
-                                Column(
-                                    horizontalAlignment = Alignment.End,
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                            }
+                        }
+                    }
+                }
+            } else if (activeTab == "promotions") {
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = BrandPrimary)
+                    }
+                } else if (filteredPromos.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Default.Campaign, contentDescription = null, modifier = Modifier.size(54.dp), tint = Color.LightGray)
+                            Text("لا توجد عروض ترويجية مطابقة حالياً.", color = TextSecondaryGray, fontSize = 13.sp)
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxSize().weight(1f)
+                    ) {
+                        items(filteredPromos, key = { it.offerId }) { offer ->
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                shape = RoundedCornerShape(10.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedPromoForEdit = offer
+                                        showPromoEditDialog = true
+                                    }
+                                    .testTag("manage_promo_item_${offer.offerId}")
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        text = "${product.price} ريال",
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 13.sp,
-                                        color = BrandPrimary
-                                    )
-
-                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        IconButton(
-                                            onClick = {
-                                                selectedProductForEdit = product
-                                                showEditDialog = true
-                                            },
-                                            modifier = Modifier.size(32.dp)
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            Icon(Icons.Default.Edit, contentDescription = "تعديل", tint = WarningAmber, modifier = Modifier.size(16.dp))
+                                            Text(
+                                                text = offer.title,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp,
+                                                color = BrandPrimary
+                                            )
+                                            if (offer.isActive) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(Color(0xFFDCFCE7), RoundedCornerShape(4.dp))
+                                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                ) {
+                                                    Text("نشط 🟢", color = Color(0xFF15803D), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            } else {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(Color(0xFFF1F5F9), RoundedCornerShape(4.dp))
+                                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                ) {
+                                                    Text("موقف 🔴", color = Color(0xFF475569), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
                                         }
 
-                                        IconButton(
-                                            onClick = {
-                                                FirebaseService.deletePharmaProduct(product.productId) { success ->
-                                                    if (success) {
-                                                        Toast.makeText(context, "🗑️ تم حذف الصنف بنجاح", Toast.LENGTH_SHORT).show()
-                                                        loadProducts()
-                                                    }
-                                                }
-                                            },
-                                            modifier = Modifier.size(32.dp).testTag("delete_product_${product.productId}")
+                                        Text(
+                                            text = "المنتج: ${offer.productName}",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = OnSurfaceDark
+                                        )
+
+                                        Text(
+                                            text = offer.description,
+                                            fontSize = 10.sp,
+                                            color = TextSecondaryGray,
+                                            lineHeight = 14.sp
+                                        )
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                                         ) {
-                                            Icon(Icons.Default.Delete, contentDescription = "حذف", tint = ErrorRed, modifier = Modifier.size(16.dp))
+                                            if (offer.targetGovernorate.isNotEmpty()) {
+                                                Text(
+                                                    text = "المحافظة: ${offer.targetGovernorate} 📍",
+                                                    fontSize = 9.sp,
+                                                    color = MedBluePrimary,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            } else {
+                                                Text(
+                                                    text = "المحافظة: كل المحافظات 🌍",
+                                                    fontSize = 9.sp,
+                                                    color = TextSecondaryGray
+                                                )
+                                            }
+                                            
+                                            if (offer.discountPercent > 0.0) {
+                                                Text(
+                                                    text = "الخصم: ${offer.discountPercent.toInt()}%",
+                                                    fontSize = 9.sp,
+                                                    color = ErrorRed,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    Column(
+                                        horizontalAlignment = Alignment.End,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        if (offer.specialPrice > 0.0) {
+                                            Text(
+                                                text = "${offer.specialPrice.toInt()} ر.ي",
+                                                fontWeight = FontWeight.ExtraBold,
+                                                fontSize = 13.sp,
+                                                color = MedGreenPrimary
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "نسبة خصم",
+                                                fontWeight = FontWeight.Medium,
+                                                fontSize = 11.sp,
+                                                color = TextSecondaryGray
+                                            )
+                                        }
+
+                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            IconButton(
+                                                onClick = {
+                                                    selectedPromoForEdit = offer
+                                                    showPromoEditDialog = true
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(Icons.Default.Edit, contentDescription = "تعديل", tint = WarningAmber, modifier = Modifier.size(16.dp))
+                                            }
+
+                                            IconButton(
+                                                onClick = {
+                                                    FirebaseService.deleteOffer(offer.offerId) { success ->
+                                                        if (success) {
+                                                            Toast.makeText(context, "🗑️ تم حذف العرض بنجاح", Toast.LENGTH_SHORT).show()
+                                                            loadProducts()
+                                                        }
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp).testTag("delete_promo_${offer.offerId}")
+                                            ) {
+                                                Icon(Icons.Default.Delete, contentDescription = "حذف", tint = ErrorRed, modifier = Modifier.size(16.dp))
+                                            }
                                         }
                                     }
                                 }
@@ -573,6 +810,179 @@ fun DirectorCatalogManagementScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showEditDialog = false }) {
+                    Text("إلغاء ❌", fontSize = 12.sp, color = ErrorRed)
+                }
+            }
+        )
+    }
+
+    // Add / Edit Promotional Offer Dialog
+    if (showPromoEditDialog) {
+        var promoTitle by remember { mutableStateOf(selectedPromoForEdit?.title ?: "") }
+        var promoDesc by remember { mutableStateOf(selectedPromoForEdit?.description ?: "") }
+        var selectedProdId by remember { mutableStateOf(selectedPromoForEdit?.productId ?: "") }
+        var discountValField by remember { mutableStateOf(selectedPromoForEdit?.discountPercent?.toInt()?.toString() ?: "0") }
+        var specialPriceField by remember { mutableStateOf(selectedPromoForEdit?.specialPrice?.toInt()?.toString() ?: "0") }
+        var targetGovField by remember { mutableStateOf(selectedPromoForEdit?.targetGovernorate ?: "") }
+        var isPromoActiveCheck by remember { mutableStateOf(selectedPromoForEdit?.isActive ?: true) }
+
+        var showProductDropdown by remember { mutableStateOf(false) }
+
+        // Find currently selected product commercial name
+        val selectedProductObj = productsList.find { it.productId == selectedProdId }
+        val selectedProductLabel = selectedProductObj?.commercialName ?: "اختر صنف دواء مرتبط 💊"
+
+        AlertDialog(
+            onDismissRequest = { showPromoEditDialog = false },
+            title = {
+                Text(
+                    text = if (selectedPromoForEdit == null) "إضافة حملة ترويجية جديدة 📣" else "تعديل الحملة الترويجية ✏️",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = BrandPrimary,
+                    textAlign = TextAlign.Right,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedTextField(
+                        value = promoTitle,
+                        onValueChange = { promoTitle = it },
+                        label = { Text("عنوان الحملة الترويجية (مثال: عرض الصيف الخاص) ✍️", fontSize = 11.sp) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().testTag("dialog_promo_title")
+                    )
+
+                    OutlinedTextField(
+                        value = promoDesc,
+                        onValueChange = { promoDesc = it },
+                        label = { Text("تفاصيل العرض والمميزات 📝", fontSize = 11.sp) },
+                        modifier = Modifier.fillMaxWidth().height(80.dp)
+                    )
+
+                    // Product Selector dropdown
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = selectedProductLabel,
+                            onValueChange = { },
+                            readOnly = true,
+                            label = { Text("الصنف الدوائي المرتبط للعرض 💊", fontSize = 11.sp) },
+                            trailingIcon = {
+                                IconButton(onClick = { showProductDropdown = true }) {
+                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showProductDropdown = true }
+                        )
+
+                        DropdownMenu(
+                            expanded = showProductDropdown,
+                            onDismissRequest = { showProductDropdown = false },
+                            modifier = Modifier.fillMaxWidth(0.9f)
+                        ) {
+                            productsList.forEach { product ->
+                                DropdownMenuItem(
+                                    text = { Text("${product.commercialName} (${product.scientificName})", fontSize = 11.sp) },
+                                    onClick = {
+                                        selectedProdId = product.productId
+                                        showProductDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = discountValField,
+                            onValueChange = { discountValField = it },
+                            label = { Text("نسبة الخصم % 🏷️", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        OutlinedTextField(
+                            value = specialPriceField,
+                            onValueChange = { specialPriceField = it },
+                            label = { Text("سعر خاص مباشر (ريال) 💰", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = targetGovField,
+                        onValueChange = { targetGovField = it },
+                        label = { Text("المحافظة المستهدفة (اتركه فارغاً لكل المحافظات) 📍", fontSize = 11.sp) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("حالة العرض نشط حالياً 🟢", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Switch(
+                            checked = isPromoActiveCheck,
+                            onCheckedChange = { isPromoActiveCheck = it }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (promoTitle.isBlank() || selectedProdId.isBlank()) {
+                            Toast.makeText(context, "⚠️ يرجى إدخال عنوان العرض وتحديد صنف دواء مرتبط", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val discPct = discountValField.toDoubleOrNull() ?: 0.0
+                        val specPrice = specialPriceField.toDoubleOrNull() ?: 0.0
+                        val associatedProduct = productsList.find { it.productId == selectedProdId }
+
+                        val offerToSave = PromotionalOffer(
+                            offerId = selectedPromoForEdit?.offerId ?: "",
+                            productId = selectedProdId,
+                            productName = associatedProduct?.commercialName ?: "صنف طبي",
+                            title = promoTitle.trim(),
+                            description = promoDesc.trim(),
+                            discountPercent = discPct,
+                            specialPrice = specPrice,
+                            targetGovernorate = targetGovField.trim(),
+                            startDate = selectedPromoForEdit?.startDate ?: System.currentTimeMillis(),
+                            endDate = selectedPromoForEdit?.endDate ?: (System.currentTimeMillis() + 7 * 24 * 3600 * 1000L),
+                            isActive = isPromoActiveCheck
+                        )
+
+                        FirebaseService.createOffer(offerToSave) { success ->
+                            if (success) {
+                                Toast.makeText(context, "✔️ تم حفظ الحملة الترويجية بنجاح", Toast.LENGTH_SHORT).show()
+                                showPromoEditDialog = false
+                                loadProducts() // reload promotions list
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = OnBrandPrimary),
+                    modifier = Modifier.testTag("dialog_save_promo_btn")
+                ) {
+                    Text("حفظ الحملة ✅", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = OnBrandPrimary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPromoEditDialog = false }) {
                     Text("إلغاء ❌", fontSize = 12.sp, color = ErrorRed)
                 }
             }

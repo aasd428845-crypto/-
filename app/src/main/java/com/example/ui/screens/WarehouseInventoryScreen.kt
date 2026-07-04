@@ -473,6 +473,7 @@ fun WarehouseInventoryScreen(
 
                         // Update in Firebase Service
                         FirebaseService.updateInventoryQuantity(
+                            branchId = currentUser.branchId ?: "branch_sanaa",
                             sku = currentItem.sku,
                             addedQty = delta,
                             expiryDate = if (adjustmentType == "receive") newExpiryDateStr else ""
