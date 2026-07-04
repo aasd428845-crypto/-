@@ -11,3 +11,4 @@ local.properties
 
 # APK outputs (لا ترفعها للمستودع)
 app/build/outputs/
+attached_assets/
