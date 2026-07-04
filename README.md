@@ -1,21 +1,49 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# MedLink Yemen 🏥
 
-# Run and deploy your AI Studio app
+تطبيق Android لإدارة فروع الأدوية والمستلزمات الطبية.
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/5468ccf8-3ca8-491e-aefe-a3762c125f52
+## 🔨 بناء الـ APK عبر GitHub Actions (بدون جهاز كمبيوتر)
 
-## Run Locally
+### الخطوات:
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+1. **ارفع المشروع إلى مستودعك على GitHub**
+2. اذهب إلى تبويب **Actions** في المستودع
+3. اختر workflow باسم **Build APK**
+4. اضغط على **Run workflow** ← **Run workflow**
+5. انتظر انتهاء البناء (حوالي 5-10 دقائق)
+6. بعد الانتهاء، اضغط على اسم الـ Run ← ابحث عن قسم **Artifacts**
+7. حمّل ملف `MedLinkYemen-debug-apk`
 
+> الـ APK يُبنى تلقائياً أيضاً عند كل `push` إلى الفرع الرئيسي.
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+---
+
+## 📋 متطلبات البناء
+
+- JDK 17
+- Gradle 9.3.1
+- Android compileSdk 34 / minSdk 24
+
+## 🛠️ بناء محلي (إن توفر جهاز)
+
+**المتطلبات:** [Android Studio](https://developer.android.com/studio)
+
+1. افتح المشروع في Android Studio
+2. شغّل التطبيق على محاكي أو جهاز حقيقي
+
+---
+
+## 🗂️ هيكل المشروع
+
+```
+app/
+└── src/main/
+    ├── java/com/example/
+    │   ├── MainActivity.kt
+    │   ├── model/         # نماذج البيانات
+    │   ├── service/       # Firebase وخدمات البيانات
+    │   └── ui/screens/    # شاشات التطبيق (Compose)
+    └── res/               # الموارد
+```
