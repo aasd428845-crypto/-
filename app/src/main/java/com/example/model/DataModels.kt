@@ -1,6 +1,7 @@
 package com.example.model
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 
 // ==========================================
 // 🏢 النظام التعريفي والتنظيمي للمؤسسة والشركاء (Corporate & Identity)
@@ -12,17 +13,17 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class CompanyInfo(
-    val companyId: String = "main_company",
-    val companyName: String = "",
-    val companyNameEn: String = "",
-    val logoUrl: String = "",
+    @SerialName("id") val companyId: String = "main_company",
+    @SerialName("company_name") val companyName: String = "",
+    @SerialName("company_name_en") val companyNameEn: String = "",
+    @SerialName("logo_url") val logoUrl: String = "",
     val phone: String = "",
     val email: String = "",
-    val mainAddress: String = "",
-    val foundedYear: String = "",
-    val licenseNumber: String = "",
-    val totalBranches: Int = 0,
-    val isActive: Boolean = true
+    @SerialName("main_address") val mainAddress: String = "",
+    @SerialName("founded_year") val foundedYear: String = "",
+    @SerialName("license_number") val licenseNumber: String = "",
+    @SerialName("total_branches") val totalBranches: Int = 0,
+    @SerialName("is_active") val isActive: Boolean = true
 )
 
 /**
@@ -31,22 +32,22 @@ data class CompanyInfo(
  */
 @Serializable
 data class Branch(
-    val branchId: String = "",
-    val branchName: String = "",
+    @SerialName("id") val branchId: String = "",
+    @SerialName("branch_name") val branchName: String = "",
     val governorate: String = "",
     val city: String = "",
     val address: String = "",
     val phone: String = "",
-    val managerId: String = "",
-    val managerName: String = "",
-    val managerPhone: String = "",
+    @SerialName("manager_id") val managerId: String = "",
+    @SerialName("manager_name") val managerName: String = "",
+    @SerialName("manager_phone") val managerPhone: String = "",
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
-    val isActive: Boolean = true,
-    val createdAt: Long = 0L,
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("created_at") val createdAt: Long = 0L,
 
     // ⚡ المتطلبات الجديدة: مسارات التوصيل اللوجستية المسندة للفرع لتغطية الصيدليات والمستشفيات جغرافياً
-    val assignedRoutes: List<String> = emptyList()
+    @SerialName("assigned_routes") val assignedRoutes: List<String> = emptyList()
 )
 
 /**
@@ -55,30 +56,30 @@ data class Branch(
  */
 @Serializable
 data class User(
-    val userId: String = "",
+    @SerialName("id") val userId: String = "",
     val name: String = "",
     val email: String = "",
     val role: String = "", // "client", "branch_manager", "company_director"
-    val clientType: String = "", // "hospital" أو "pharmacy" للعملاء فقط (للتوافق الرجعي)
+    @SerialName("client_type") val clientType: String = "", // "hospital" أو "pharmacy" للعملاء فقط (للتوافق الرجعي)
     val city: String = "",
     val governorate: String = "",
     val phone: String = "",
-    val orgName: String = "",
-    val branchId: String = "", // لمدراء الفروع فقط
-    val branchName: String = "", // اسم الفرع
-    val isVerified: Boolean = false,
-    val isActive: Boolean = true,
-    val profileImageUrl: String = "",
-    val createdAt: Long = 0L,
+    @SerialName("org_name") val orgName: String = "",
+    @SerialName("branch_id") val branchId: String = "", // لمدراء الفروع فقط
+    @SerialName("branch_name") val branchName: String = "", // اسم الفرع
+    @SerialName("is_verified") val isVerified: Boolean = false,
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("profile_image_url") val profileImageUrl: String = "",
+    @SerialName("created_at") val createdAt: Long = 0L,
 
     // ⚡ المتطلبات الجديدة: تصنيف المنشأة كـ Enum رسمي لأغراض الرقابة وتوريد الأصناف المقيدة والباردة
-    val facilityType: FacilityType = FacilityType.PHARMACY,
+    @SerialName("facility_type") val facilityType: FacilityType = FacilityType.PHARMACY,
     
     // ⚡ رقم الترخيص الصيدلي والمهني الصادر من الهيئة العليا للأدوية لضمان قانونية العمليات التجارية
-    val licenseNumber: String = "",
+    @SerialName("license_number") val licenseNumber: String = "",
     
     // ⚡ الحساب الائتماني والمالي الذي يربط العميل بحدود الديون والآجال وميزان المراجعة
-    val clientAccount: ClientAccount = ClientAccount()
+    @SerialName("client_account") val clientAccount: ClientAccount = ClientAccount()
 )
 
 /**
@@ -97,20 +98,20 @@ enum class FacilityType {
  */
 @Serializable
 data class UserAddress(
-    val addressId: String = "",
-    val userId: String = "",
-    val userType: String = "", // "hospital" or "supplier"
+    @SerialName("id") val addressId: String = "",
+    @SerialName("user_id") val userId: String = "",
+    @SerialName("user_type") val userType: String = "", // "hospital" or "supplier"
     val label: String = "", // e.g. "المقر الرئيسي"
-    val hospitalOrCompanyName: String = "",
-    val nearbyLandmark: String = "", // معلم بارز
+    @SerialName("hospital_or_company_name") val hospitalOrCompanyName: String = "",
+    @SerialName("nearby_landmark") val nearbyLandmark: String = "", // معلم بارز
     val governorate: String = "", // المحافظة
     val district: String = "", // المديرية
     val neighborhood: String = "", // الحي
-    val fullAddress: String = "",
+    @SerialName("full_address") val fullAddress: String = "",
     val latitude: Double = 15.3482,
     val longitude: Double = 44.2191,
-    val isDefault: Boolean = false,
-    val createdAt: Long = 0L
+    @SerialName("is_default") val isDefault: Boolean = false,
+    @SerialName("created_at") val createdAt: Long = 0L
 )
 
 
@@ -147,21 +148,21 @@ enum class InventoryStatus {
  */
 @Serializable
 data class PharmaProduct(
-    val productId: String = "", // المعرف الفريد للمنتج
+    @SerialName("id") val productId: String = "", // المعرف الفريد للمنتج
     val sku: String = "", // كود وحدة حفظ المخزون (Stock Keeping Unit)
-    val ndcCode: String = "", // كود الدواء الوطني القياسي المعتمد عالمياً (National Drug Code)
-    val commercialName: String = "", // الاسم التجاري باللغتين (مثال: بنادول اكسترا)
-    val scientificName: String = "", // الاسم العلمي والمادة الفعالة (مثال: باراسيتامول)
+    @SerialName("ndc_code") val ndcCode: String = "", // كود الدواء الوطني القياسي المعتمد عالمياً (National Drug Code)
+    @SerialName("commercial_name") val commercialName: String = "", // الاسم التجاري باللغتين (مثال: بنادول اكسترا)
+    @SerialName("scientific_name") val scientificName: String = "", // الاسم العلمي والمادة الفعالة (مثال: باراسيتامول)
     val manufacturer: String = "", // الشركة الطبية المصنعة (مثال: GSK)
-    val dosageForm: DosageForm = DosageForm.TABLET, // الشكل الصيدلاني للمستحضر
+    @SerialName("dosage_form") val dosageForm: DosageForm = DosageForm.TABLET, // الشكل الصيدلاني للمستحضر
     val strength: String = "", // التركيز الكيميائي والجرعة (مثال: 500 ملغ)
-    val isColdChain: Boolean = false, // هل يتطلب سلسلة تبريد ونقل مبرد دقيق (2-8 درجة مئوية)؟
-    val isControlledSubstance: Boolean = false, // هل هو دواء مراقَب وخاضع لرقابة مكافحة المخدرات والوزارة؟
-    val unitType: String = "Box", // نوع تعبئة الوحدة الصيدلانية (Box, Ampoule, Bottle, Vial)
-    val unitsPerBox: Int = 1, // عدد القطع أو الشرائط أو الأمبولات داخل الصندوق الواحد
+    @SerialName("is_cold_chain") val isColdChain: Boolean = false, // هل يتطلب سلسلة تبريد ونقل مبرد دقيق (2-8 درجة مئوية)؟
+    @SerialName("is_controlled_substance") val isControlledSubstance: Boolean = false, // هل هو دواء مراقَب وخاضع لرقابة مكافحة المخدرات والوزارة؟
+    @SerialName("unit_type") val unitType: String = "Box", // نوع تعبئة الوحدة الصيدلانية (Box, Ampoule, Bottle, Vial)
+    @SerialName("units_per_box") val unitsPerBox: Int = 1, // عدد القطع أو الشرائط أو الأمبولات داخل الصندوق الواحد
     val price: Double = 0.0, // سعر البيع الأساسي المعتمد للصيدليات والمستشفيات
     val description: String = "", // الوصف والتحذيرات الدوائية المرافقة
-    val isActive: Boolean = true
+    @SerialName("is_active") val isActive: Boolean = true
 )
 
 /**
@@ -210,12 +211,12 @@ data class CartItem(
  */
 @Serializable
 data class OrderLine(
-    val lineId: String = "", // كود البند الفريد
+    @SerialName("id") val lineId: String = "", // كود البند الفريد
     val product: PharmaProduct = PharmaProduct(), // المستحضر الدوائي المسعر
-    val requestedQty: Int = 0, // الكمية التي طلبها العميل في الأصل
-    val shippedQty: Int = 0, // الكمية التي تم تجهيزها وشحنها وتأكيد استلامها فعلياً (تسمح بالشحن الجزئي)
-    val unitPrice: Double = 0.0, // سعر القطعة الفعلي المتفق عليه
-    val totalPrice: Double = 0.0 // الإجمالي المالي للبند الحالي (الالكمية المشحونة * سعر الوحدة)
+    @SerialName("requested_qty") val requestedQty: Int = 0, // الكمية التي طلبها العميل في الأصل
+    @SerialName("shipped_qty") val shippedQty: Int = 0, // الكمية التي تم تجهيزها وشحنها وتأكيد استلامها فعلياً (تسمح بالشحن الجزئي)
+    @SerialName("unit_price") val unitPrice: Double = 0.0, // سعر القطعة الفعلي المتفق عليه
+    @SerialName("total_price") val totalPrice: Double = 0.0 // الإجمالي المالي للبند الحالي (الالكمية المشحونة * سعر الوحدة)
 )
 
 /**
@@ -249,34 +250,34 @@ sealed class OrderStatus {
 @Serializable
 data class Order(
     // 🏢 الهيكل المؤسسي الحديث (B2B Enterprise Mode)
-    val orderId: String = "", // معرف الطلب الفريد
-    val clientId: String = "", // معرف المنشأة الطبية (العميل)
-    val orderLines: List<OrderLine> = emptyList(), // الأسطر والبنود الدوائية التفصيلية (تدعم الشحن الجزئي)
-    val orderStatus: OrderStatus = OrderStatus.Submitted, // دورة حياة الطلب عبر Sealed Class
-    val totalAmount: Double = 0.0, // إجمالي المبلغ المالي المستحق للطلب
-    val deliveryRouteId: String = "", // كود المسار اللوجستي للتوصيل والشاحنة المخصصة
-    val createdAt: Long = 0L, // تاريخ إنشاء وتثبيت الطلب
+    @SerialName("id") val orderId: String = "", // معرف الطلب الفريد
+    @SerialName("client_id") val clientId: String = "", // معرف المنشأة الطبية (العميل)
+    @SerialName("order_lines") val orderLines: List<OrderLine> = emptyList(), // الأسطر والبنود الدوائية التفصيلية (تدعم الشحن الجزئي)
+    @SerialName("order_status") val orderStatus: OrderStatus = OrderStatus.Submitted, // دورة حياة الطلب عبر Sealed Class
+    @SerialName("total_amount") val totalAmount: Double = 0.0, // إجمالي المبلغ المالي المستحق للطلب
+    @SerialName("delivery_route_id") val deliveryRouteId: String = "", // كود المسار اللوجستي للتوصيل والشاحنة المخصصة
+    @SerialName("created_at") val createdAt: Long = 0L, // تاريخ إنشاء وتثبيت الطلب
 
     // 🔄 حقول التوافقية الرجعية مع الكود القديم (Backward Compatibility Layer - لتفادي انهيار الـ UI)
-    val clientName: String = "",
-    val clientType: String = "", // hospital / pharmacy
-    val clientGovernorate: String = "",
-    val orderContent: String = "", // الوصف النصي المجمع للاحتياج
+    @SerialName("client_name") val clientName: String = "",
+    @SerialName("client_type") val clientType: String = "", // hospital / pharmacy
+    @SerialName("client_governorate") val clientGovernorate: String = "",
+    @SerialName("order_content") val orderContent: String = "", // الوصف النصي المجمع للاحتياج
     val attachments: List<String> = emptyList(),
-    val urgencyLevel: String = "normal", // normal, high, critical
-    val broadcastType: String = "all", // all, nearby, selected
-    val targetBranches: List<String> = emptyList(),
+    @SerialName("urgency_level") val urgencyLevel: String = "normal", // normal, high, critical
+    @SerialName("broadcast_type") val broadcastType: String = "all", // all, nearby, selected
+    @SerialName("target_branches") val targetBranches: List<String> = emptyList(),
     val status: String = "broadcast", // broadcast, offer_received, negotiating, confirmed, delivered
-    val priceOfferId: String = "",
-    val hospitalId: String = "",
-    val supplierId: String = "",
-    val medicineName: String = "",
+    @SerialName("price_offer_id") val priceOfferId: String = "",
+    @SerialName("hospital_id") val hospitalId: String = "",
+    @SerialName("supplier_id") val supplierId: String = "",
+    @SerialName("medicine_name") val medicineName: String = "",
     val price: Double = 0.0,
     val quantity: Int = 0,
-    val deliveryMethod: String = "", // "self" or "platform"
-    val deliveryScheduledDate: String = "",
-    val parentOrderId: String = "",       // فارغ في الطلب الأصلي، يشير لمعرف الطلب الأصلي في أي "طلب فرعي" ناتج عن تحويل جزئي
-    val scheduledDeliveryDate: Long = 0L // يُحدَّد لاحقاً في الجزء ج
+    @SerialName("delivery_method") val deliveryMethod: String = "", // "self" or "platform"
+    @SerialName("delivery_scheduled_date") val deliveryScheduledDate: String = "",
+    @SerialName("parent_order_id") val parentOrderId: String = "",       // فارغ في الطلب الأصلي، يشير لمعرف الطلب الأصلي في أي "طلب فرعي" ناتج عن تحويل جزئي
+    @SerialName("scheduled_delivery_date") val scheduledDeliveryDate: Long = 0L // يُحدَّد لاحقاً في الجزء ج
 )
 
 
@@ -298,15 +299,15 @@ enum class PaymentStatus {
  */
 @Serializable
 data class Invoice(
-    val invoiceId: String = "", // المعرف الفريد للفاتورة المالية
-    val orderId: String = "", // كود الطلبية القانونية المرتبطة بهذه الفاتورة
-    val totalAmount: Double = 0.0, // الإجمالي المالي المطلوب بعد الضرائب والخصومات
-    val dueDate: Long = 0L, // تاريخ استحقاق السداد المالي (Timestamp)
-    val paymentStatus: PaymentStatus = PaymentStatus.UNPAID, // الحالة الراهنة للتسديد والدفع
-    val taxAmount: Double = 0.0, // مقدار الضريبة الطبية والمجتمعية المضافة للفاتورة
-    val discountAmount: Double = 0.0, // الخصم التجاري الممنوح للمؤسسة الطبية
-    val billingAddress: String = "", // عنوان إرسال الفواتير والمطالبات القانوني
-    val issuedAt: Long = 0L // تاريخ ووقت إصدار وتثبيت الفاتورة
+    @SerialName("id") val invoiceId: String = "", // المعرف الفريد للفاتورة المالية
+    @SerialName("order_id") val orderId: String = "", // كود الطلبية القانونية المرتبطة بهذه الفاتورة
+    @SerialName("total_amount") val totalAmount: Double = 0.0, // الإجمالي المالي المطلوب بعد الضرائب والخصومات
+    @SerialName("due_date") val dueDate: Long = 0L, // تاريخ استحقاق السداد المالي (Timestamp)
+    @SerialName("payment_status") val paymentStatus: PaymentStatus = PaymentStatus.UNPAID, // الحالة الراهنة للتسديد والدفع
+    @SerialName("tax_amount") val taxAmount: Double = 0.0, // مقدار الضريبة الطبية والمجتمعية المضافة للفاتورة
+    @SerialName("discount_amount") val discountAmount: Double = 0.0, // الخصم التجاري الممنوح للمؤسسة الطبية
+    @SerialName("billing_address") val billingAddress: String = "", // عنوان إرسال الفواتير والمطالبات القانوني
+    @SerialName("issued_at") val issuedAt: Long = 0L // تاريخ ووقت إصدار وتثبيت الفاتورة
 )
 
 /**
@@ -325,12 +326,12 @@ enum class PaymentTerms {
  */
 @Serializable
 data class ClientAccount(
-    val creditLimit: Double = 1000000.0, // السقف الائتماني الأقصى بالعملة المحلية (مثال: مليون ريال يمني)
-    val currentBalance: Double = 0.0, // الرصيد الحالي للعميل (المستحقات المعلقة على الصيدلية/المستشفى)
-    val paymentTerms: PaymentTerms = PaymentTerms.CASH_ON_DELIVERY, // شروط السداد المعتمدة والمبرمة بالاتفاقية
+    @SerialName("credit_limit") val creditLimit: Double = 1000000.0, // السقف الائتماني الأقصى بالعملة المحلية (مثال: مليون ريال يمني)
+    @SerialName("current_balance") val currentBalance: Double = 0.0, // الرصيد الحالي للعميل (المستحقات المعلقة على الصيدلية/المستشفى)
+    @SerialName("payment_terms") val paymentTerms: PaymentTerms = PaymentTerms.CASH_ON_DELIVERY, // شروط السداد المعتمدة والمبرمة بالاتفاقية
     val currency: String = "YER", // العملة الرسمية المعتمدة للحساب والمقاصة (YER أو USD)
-    val lastPaymentDate: Long = 0L, // تاريخ سداد آخر دفعة مالية ناجحة من العميل
-    val isActive: Boolean = true // هل الحساب الائتماني والتعاقد ساري وصالح للتشغيل والتوريد الآجل؟
+    @SerialName("last_payment_date") val lastPaymentDate: Long = 0L, // تاريخ سداد آخر دفعة مالية ناجحة من العميل
+    @SerialName("is_active") val isActive: Boolean = true // هل الحساب الائتماني والتعاقد ساري وصالح للتشغيل والتوريد الآجل؟
 )
 
 
@@ -368,22 +369,22 @@ data class PriceOffer(
  */
 @Serializable
 data class BranchOffer(
-    val offerId: String = "",
-    val orderId: String = "",
-    val branchId: String = "",
-    val branchName: String = "",
-    val managerId: String = "",
-    val managerName: String = "",
-    val offerDetails: String = "",
-    val totalPrice: Double = 0.0,
+    @SerialName("id") val offerId: String = "",
+    @SerialName("order_id") val orderId: String = "",
+    @SerialName("branch_id") val branchId: String = "",
+    @SerialName("branch_name") val branchName: String = "",
+    @SerialName("manager_id") val managerId: String = "",
+    @SerialName("manager_name") val managerName: String = "",
+    @SerialName("offer_details") val offerDetails: String = "",
+    @SerialName("total_price") val totalPrice: Double = 0.0,
     val currency: String = "YER",
-    val deliveryDays: Int = 0,
-    val shippingCost: Double = 0.0,
-    val paymentTerms: String = "",
-    val attachmentUrl: String = "",
+    @SerialName("delivery_days") val deliveryDays: Int = 0,
+    @SerialName("shipping_cost") val shippingCost: Double = 0.0,
+    @SerialName("payment_terms") val paymentTerms: String = "",
+    @SerialName("attachment_url") val attachmentUrl: String = "",
     val notes: String = "",
     val status: String = "pending", // pending/accepted/rejected/negotiating
-    val createdAt: Long = 0L
+    @SerialName("created_at") val createdAt: Long = 0L
 )
 
 
@@ -543,10 +544,10 @@ data class DirectorNotification(
 data class WarehouseInventoryItem(
     val sku: String = "",
     val name: String = "",
-    val dosageForm: String = "",
-    val availableQuantity: Int = 0,
-    val expiryDate: String = "",
-    val branchId: String = ""
+    @SerialName("dosage_form") val dosageForm: String = "",
+    @SerialName("available_quantity") val availableQuantity: Int = 0,
+    @SerialName("expiry_date") val expiryDate: String = "",
+    @SerialName("branch_id") val branchId: String = ""
 )
 
 // ==========================================
@@ -555,18 +556,18 @@ data class WarehouseInventoryItem(
 
 @Serializable
 data class PromotionalOffer(
-    val offerId: String = "",
-    val productId: String = "",       // يربط بـ PharmaProduct.productId
-    val productName: String = "",     // نسخة مخزّنة للعرض السريع بدون join
+    @SerialName("id") val offerId: String = "",
+    @SerialName("product_id") val productId: String = "",       // يربط بـ PharmaProduct.productId
+    @SerialName("product_name") val productName: String = "",     // نسخة مخزّنة للعرض السريع بدون join
     val title: String = "",
     val description: String = "",
-    val discountPercent: Double = 0.0,   // مثال: 15.0 يعني خصم 15%
-    val specialPrice: Double = 0.0,      // اختياري: سعر خاص مباشر بدل النسبة (استخدم الأكبر أولوية إن وُجد)
-    val startDate: Long = 0L,
-    val endDate: Long = 0L,
-    val targetGovernorate: String = "",  // فارغ = يشمل كل المحافظات
-    val isActive: Boolean = true,
-    val createdAt: Long = 0L
+    @SerialName("discount_percent") val discountPercent: Double = 0.0,   // مثال: 15.0 يعني خصم 15%
+    @SerialName("special_price") val specialPrice: Double = 0.0,      // اختياري: سعر خاص مباشر بدل النسبة (استخدم الأكبر أولوية إن وُجد)
+    @SerialName("start_date") val startDate: Long = 0L,
+    @SerialName("end_date") val endDate: Long = 0L,
+    @SerialName("target_governorate") val targetGovernorate: String = "",  // فارغ = يشمل كل المحافظات
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("created_at") val createdAt: Long = 0L
 )
 
 

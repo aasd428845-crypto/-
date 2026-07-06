@@ -10,7 +10,6 @@ activityCompose = "1.8.2"
 composeBom = "2024.02.00"
 navigationCompose = "2.7.7"
 kotlinxSerializationJson = "1.6.3"
-firebaseBom = "32.8.0"
 googleMaps = "18.2.0"
 mapsCompose = "4.3.3"
 
@@ -33,11 +32,6 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
-
-# Firebase
-firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
-firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
-firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
 
 # Play Services & Maps Compose
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "googleMaps" }

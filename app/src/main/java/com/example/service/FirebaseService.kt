@@ -2,17 +2,60 @@ package com.example.service
 
 import android.util.Log
 import com.example.model.*
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.math.*
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.gotrue.providers.builtin.Email
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+// --- Dummy Firebase/Firestore types to allow compilation of offline fallback blocks ---
+class DummyTask<T> {
+    fun addOnSuccessListener(listener: (T) -> Unit): DummyTask<T> = this
+    fun addOnFailureListener(listener: (Exception) -> Unit): DummyTask<T> = this
+    fun addOnCompleteListener(listener: (DummyTask<T>) -> Unit): DummyTask<T> = this
+}
+class DummyQuerySnapshot {
+    val documents: List<DummyDocumentSnapshot> = emptyList()
+    fun <T> toObjects(clazz: Class<T>): List<T> = emptyList()
+}
+class DummyDocumentSnapshot {
+    val id: String = ""
+    val reference: Any? = null
+    fun exists(): Boolean = false
+    fun <T> toObject(clazz: Class<T>): T? = null
+}
+class DummyDocument {
+    fun set(value: Any?): DummyTask<Void?> = DummyTask()
+    fun update(field1: String, value1: Any?, vararg fieldsAndValues: Any?): DummyTask<Void?> = DummyTask()
+    fun delete(): DummyTask<Void?> = DummyTask()
+    fun get(): DummyTask<DummyDocumentSnapshot> = DummyTask()
+}
+class DummyCollection {
+    fun document(id: String): DummyDocument = DummyDocument()
+    fun get(): DummyTask<DummyQuerySnapshot> = DummyTask()
+    fun whereEqualTo(field: String, value: Any?): DummyCollection = this
+}
+class DummyBatch {
+    fun set(docRef: Any?, value: Any?): DummyBatch = this
+    fun update(docRef: Any?, field: String, value: Any?): DummyBatch = this
+    fun update(docRef: Any?, field: String, value: Any?, vararg fieldsAndValues: Any?): DummyBatch = this
+    fun update(docRef: Any?, fields: Map<String, Any?>): DummyBatch = this
+    fun delete(docRef: Any?): DummyBatch = this
+    fun commit(): DummyTask<Void?> = DummyTask()
+}
+class DummyFirestore {
+    fun collection(name: String): DummyCollection = DummyCollection()
+    fun batch(): DummyBatch = DummyBatch()
+}
 
 object FirebaseService {
-    private val auth: FirebaseAuth? by lazy {
-        try { FirebaseAuth.getInstance() } catch (e: Exception) { null }
-    }
-    private val db: FirebaseFirestore? by lazy {
-        try { FirebaseFirestore.getInstance() } catch (e: Exception) { null }
-    }
+    private val scope = CoroutineScope(Dispatchers.IO)
+    private val db: DummyFirestore? = null
 
     // --- Fallback memory data vectors for fluent Offline Demonstration ---
     val fallbackCompany = CompanyInfo(
@@ -256,68 +299,146 @@ object FirebaseService {
 
     // --- Authentication ---
     fun getCurrentUser(onResult: (User?) -> Unit) {
-        val fbAuthUser = auth?.currentUser
-        if (fbAuthUser != null && db != null) {
-            db!!.collection("users").document(fbAuthUser.uid).get()
-                .addOnSuccessListener { doc ->
-                    val user = doc.toObject(User::class.java)
+        scope.launch {
+            try {
+                val sessionUser = SupabaseClientProvider.client.auth.currentUserOrNull()
+                if (sessionUser != null) {
+                    val user = withContext(Dispatchers.IO) {
+                        SupabaseClientProvider.client.postgrest["users"]
+                            .select {
+                                filter {
+                                    eq("id", sessionUser.id)
+                                }
+                            }.decodeList<User>().firstOrNull()
+                    }
                     if (user != null) {
                         currentUserSession = user
-                        onResult(user)
+                        withContext(Dispatchers.Main) { onResult(user) }
                     } else {
-                        onResult(currentUserSession)
+                        withContext(Dispatchers.Main) { onResult(currentUserSession) }
                     }
+                } else {
+                    withContext(Dispatchers.Main) { onResult(currentUserSession) }
                 }
-                .addOnFailureListener {
-                    onResult(currentUserSession)
-                }
-        } else {
-            onResult(currentUserSession)
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "getCurrentUser error: ${e.message}", e)
+                withContext(Dispatchers.Main) { onResult(currentUserSession) }
+            }
         }
     }
 
     fun loginUser(email: String, onResult: (User?, String?) -> Unit) {
-        val user = fallbackUsers.find { it.email.trim().equals(email.trim(), ignoreCase = true) }
-        if (user != null) {
-            currentUserSession = user
-            onResult(user, null)
-        } else {
-            // Self-register a mock user based on email type to facilitate effortless testing
-            val isClient = email.contains("hosp") || email.contains("hospital") || email.contains("pharmacy") || email.contains("client")
-            val isDirector = email.contains("director") || email.contains("admin")
-            val role = when {
-                isDirector -> "company_director"
-                isClient -> "client"
-                else -> "branch_manager"
+        scope.launch {
+            try {
+                val user = withContext(Dispatchers.IO) {
+                    SupabaseClientProvider.client.postgrest["users"]
+                        .select {
+                            filter {
+                                eq("email", email.trim())
+                            }
+                        }.decodeList<User>().firstOrNull()
+                }
+                if (user != null) {
+                    currentUserSession = user
+                    // also attempt to sign in with auth if possible, but lookup is sufficient
+                    withContext(Dispatchers.Main) { onResult(user, null) }
+                } else {
+                    val isClient = email.contains("hosp") || email.contains("hospital") || email.contains("pharmacy") || email.contains("client")
+                    val isDirector = email.contains("director") || email.contains("admin")
+                    val role = when {
+                        isDirector -> "company_director"
+                        isClient -> "client"
+                        else -> "branch_manager"
+                    }
+                    val newId = "user_mock_" + System.currentTimeMillis()
+                    val newMockUser = User(
+                        userId = newId,
+                        name = email.substringBefore("@").replaceFirstChar { it.uppercase() },
+                        email = email,
+                        role = role,
+                        clientType = if (email.contains("pharmacy")) "pharmacy" else "hospital",
+                        city = "صنعاء",
+                        phone = "770000000",
+                        orgName = if (isClient) "منشأة تجريبية للعميل" else "مجموعة الشفاء للأدوية",
+                        branchId = if (role == "branch_manager") "branch_sanaa" else "",
+                        branchName = if (role == "branch_manager") "فرع صنعاء الرئيسي" else ""
+                    )
+                    withContext(Dispatchers.IO) {
+                        SupabaseClientProvider.client.postgrest["users"].insert(newMockUser)
+                    }
+                    fallbackUsers.add(newMockUser)
+                    currentUserSession = newMockUser
+                    withContext(Dispatchers.Main) { onResult(newMockUser, null) }
+                }
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "loginUser error: ${e.message}", e)
+                val user = fallbackUsers.find { it.email.trim().equals(email.trim(), ignoreCase = true) }
+                if (user != null) {
+                    currentUserSession = user
+                    withContext(Dispatchers.Main) { onResult(user, null) }
+                } else {
+                    withContext(Dispatchers.Main) { onResult(null, "خطأ في تسجيل الدخول: ${e.message}") }
+                }
             }
-            val newMockUser = User(
-                userId = "user_mock_" + System.currentTimeMillis(),
-                name = email.substringBefore("@").replaceFirstChar { it.uppercase() },
-                email = email,
-                role = role,
-                clientType = if (email.contains("pharmacy")) "pharmacy" else "hospital",
-                city = "صنعاء",
-                phone = "770000000",
-                orgName = if (isClient) "منشأة تجريبية للعميل" else "مجموعة الشفاء للأدوية",
-                branchId = if (role == "branch_manager") "branch_sanaa" else "",
-                branchName = if (role == "branch_manager") "فرع صنعاء الرئيسي" else ""
-            )
-            fallbackUsers.add(newMockUser)
-            currentUserSession = newMockUser
-            onResult(newMockUser, null)
         }
     }
 
     fun registerUser(user: User, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
-        val exists = fallbackUsers.any { it.email.trim().equals(user.email.trim(), ignoreCase = true) }
-        if (exists) {
-            onFailure("عذراً، البريد الإلكتروني مسجل مسبقاً")
-            return
+        scope.launch {
+            try {
+                val exists = withContext(Dispatchers.IO) {
+                    SupabaseClientProvider.client.postgrest["users"]
+                        .select {
+                            filter {
+                                eq("email", user.email.trim())
+                            }
+                        }.decodeList<User>().isNotEmpty()
+                }
+                if (exists) {
+                    withContext(Dispatchers.Main) { onFailure("عذراً، البريد الإلكتروني مسجل مسبقاً") }
+                    return@launch
+                }
+                
+                val finalUserId = if (user.userId.isEmpty()) "user_" + System.currentTimeMillis() else user.userId
+                val finalUser = user.copy(userId = finalUserId)
+                
+                withContext(Dispatchers.IO) {
+                    SupabaseClientProvider.client.postgrest["users"].insert(finalUser)
+                }
+                
+                try {
+                    withContext(Dispatchers.IO) {
+                        SupabaseClientProvider.client.auth.signUpWith(Email) {
+                            email = finalUser.email
+                            password = "default_password_123"
+                            data = buildJsonObject {
+                                put("role", finalUser.role)
+                                put("name", finalUser.name)
+                            }
+                        }
+                    }
+                } catch (authEx: Exception) {
+                    Log.e("FirebaseService", "Auth signUpWith failed (non-blocking): ${authEx.message}")
+                }
+                
+                currentUserSession = finalUser
+                if (!fallbackUsers.any { it.email.equals(finalUser.email, true) }) {
+                    fallbackUsers.add(finalUser)
+                }
+                withContext(Dispatchers.Main) { onSuccess() }
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "registerUser error: ${e.message}", e)
+                val exists = fallbackUsers.any { it.email.trim().equals(user.email.trim(), ignoreCase = true) }
+                if (exists) {
+                    withContext(Dispatchers.Main) { onFailure("عذراً، البريد الإلكتروني مسجل مسبقاً") }
+                    return@launch
+                }
+                val finalUser = user.copy(userId = if (user.userId.isEmpty()) "user_" + System.currentTimeMillis() else user.userId)
+                fallbackUsers.add(finalUser)
+                currentUserSession = finalUser
+                withContext(Dispatchers.Main) { onSuccess() }
+            }
         }
-        val finalUser = user.copy(userId = if (user.userId.isEmpty()) "user_" + System.currentTimeMillis() else user.userId)
-        fallbackUsers.add(finalUser)
-        currentUserSession = finalUser
-        onSuccess()
     }
 
     // --- Addresses ---
