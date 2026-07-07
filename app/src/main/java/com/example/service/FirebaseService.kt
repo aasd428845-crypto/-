@@ -701,38 +701,49 @@ object FirebaseService {
             fallbackAddresses.removeAt(idx)
         }
 
-        if (db != null) {
-            db!!.collection("addresses").document(addressId).delete()
-                .addOnSuccessListener {
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["addresses"]
+                    .delete {
+                        filter {
+                            eq("id", addressId)
+                        }
+                    }
+                withContext(Dispatchers.Main) {
                     onResult(true)
                 }
-                .addOnFailureListener {
-                    onResult(false)
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "deleteUserAddress error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
                 }
-        } else {
-            onResult(true)
+            }
         }
     }
 
     // --- Bank Accounts ---
     fun getBankAccounts(userId: String, onResult: (List<BankAccount>) -> Unit) {
-        if (db != null) {
-            db!!.collection("bank_accounts")
-                .whereEqualTo("userId", userId)
-                .get()
-                .addOnSuccessListener { snap ->
-                    val list = snap.toObjects(BankAccount::class.java)
+        scope.launch {
+            try {
+                val list = SupabaseClientProvider.client.postgrest["bank_accounts"]
+                    .select {
+                        filter {
+                            eq("user_id", userId)
+                        }
+                    }.decodeList<BankAccount>()
+                withContext(Dispatchers.Main) {
                     if (list.isEmpty()) {
                         onResult(fallbackBankAccounts.filter { it.userId == userId })
                     } else {
                         onResult(list)
                     }
                 }
-                .addOnFailureListener {
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "getBankAccounts error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
                     onResult(fallbackBankAccounts.filter { it.userId == userId })
                 }
-        } else {
-            onResult(fallbackBankAccounts.filter { it.userId == userId })
+            }
         }
     }
 
@@ -748,16 +759,48 @@ object FirebaseService {
             }
         }
 
-        if (db != null) {
-            db!!.collection("bank_accounts").document(id).set(finalAcc)
-                .addOnSuccessListener {
+        scope.launch {
+            try {
+                if (finalAcc.isDefault) {
+                    try {
+                        SupabaseClientProvider.client.postgrest["bank_accounts"]
+                            .update({
+                                set("is_default", false)
+                            }) {
+                                filter {
+                                    eq("user_id", finalAcc.userId)
+                                }
+                            }
+                    } catch (ex: Exception) {
+                        Log.e("FirebaseService", "saveBankAccount resetting defaults warning: ${ex.message}")
+                    }
+                }
+
+                SupabaseClientProvider.client.postgrest["bank_accounts"].upsert(finalAcc)
+
+                // Sync local state
+                val idx = fallbackBankAccounts.indexOfFirst { it.accountId == id }
+                if (idx != -1) {
+                    fallbackBankAccounts[idx] = finalAcc
+                } else {
                     fallbackBankAccounts.add(finalAcc)
+                }
+
+                withContext(Dispatchers.Main) {
                     onSuccess()
                 }
-                .addOnFailureListener { e -> onFailure(e.localizedMessage ?: "فشل تسجيل إعداد الحساب") }
-        } else {
-            fallbackBankAccounts.add(finalAcc)
-            onSuccess()
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "saveBankAccount error: ${e.message}", e)
+                val idx = fallbackBankAccounts.indexOfFirst { it.accountId == id }
+                if (idx != -1) {
+                    fallbackBankAccounts[idx] = finalAcc
+                } else {
+                    fallbackBankAccounts.add(finalAcc)
+                }
+                withContext(Dispatchers.Main) {
+                    onSuccess()
+                }
+            }
         }
     }
 
@@ -976,23 +1019,25 @@ object FirebaseService {
     }
 
     fun getBranchOrders(branchId: String, onResult: (List<Order>) -> Unit) {
-        if (db != null) {
-            db!!.collection("orders")
-                .get()
-                .addOnSuccessListener { snap ->
-                    val list = snap.toObjects(Order::class.java)
-                    val filtered = list.filter { it.targetBranches.contains(branchId) || it.targetBranches.isEmpty() }
+        scope.launch {
+            try {
+                val list = SupabaseClientProvider.client.postgrest["orders"]
+                    .select()
+                    .decodeList<Order>()
+                val filtered = list.filter { it.targetBranches.contains(branchId) || it.targetBranches.isEmpty() }
+                withContext(Dispatchers.Main) {
                     if (filtered.isEmpty()) {
                         onResult(fallbackOrders.filter { it.targetBranches.contains(branchId) || it.targetBranches.isEmpty() })
                     } else {
                         onResult(filtered)
                     }
                 }
-                .addOnFailureListener {
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "getBranchOrders error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
                     onResult(fallbackOrders.filter { it.targetBranches.contains(branchId) || it.targetBranches.isEmpty() })
                 }
-        } else {
-            onResult(fallbackOrders.filter { it.targetBranches.contains(branchId) || it.targetBranches.isEmpty() })
+            }
         }
     }
 
@@ -1009,13 +1054,26 @@ object FirebaseService {
         if (idx != -1) {
             fallbackBranchOffers[idx] = fallbackBranchOffers[idx].copy(status = "rejected", notes = "سبب الرفض: $reason")
         }
-        if (db != null) {
-            db!!.collection("branch_offers").document(offerId)
-                .update("status", "rejected", "notes", "سبب الرفض: $reason")
-                .addOnSuccessListener { onResult(true) }
-                .addOnFailureListener { onResult(false) }
-        } else {
-            onResult(true)
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["branch_offers"]
+                    .update({
+                        set("status", "rejected")
+                        set("notes", "سبب الرفض: $reason")
+                    }) {
+                        filter {
+                            eq("id", offerId)
+                        }
+                    }
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "rejectBranchOffer error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            }
         }
     }
 
@@ -1235,18 +1293,28 @@ object FirebaseService {
             fallbackBranches[idx] = updated
         }
         
-        if (db != null) {
-            db!!.collection("branches").document(branchId)
-                .update(
-                    "address", address,
-                    "latitude", lat,
-                    "longitude", lng,
-                    "managerPhone", managerPhone
-                )
-                .addOnSuccessListener { onResult(true) }
-                .addOnFailureListener { onResult(false) }
-        } else {
-            onResult(true)
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["branches"]
+                    .update({
+                        set("address", address)
+                        set("latitude", lat)
+                        set("longitude", lng)
+                        set("manager_phone", managerPhone)
+                    }) {
+                        filter {
+                            eq("id", branchId)
+                        }
+                    }
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "updateBranchLocation error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            }
         }
     }
 
@@ -1267,14 +1335,18 @@ object FirebaseService {
         // Add to fallback notifications if we have a way to track, otherwise just add to global
         fallbackDirectorNotifications.add(finalNotification)
         
-        if (db != null) {
-            db!!.collection("director_notifications")
-                .document(finalNotification.notificationId)
-                .set(finalNotification)
-                .addOnSuccessListener { onResult(true) }
-                .addOnFailureListener { onResult(false) }
-        } else {
-            onResult(true)
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["director_notifications"].upsert(finalNotification)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "notifyDirector error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            }
         }
     }
 
@@ -1283,12 +1355,15 @@ object FirebaseService {
         userId: String,
         onResult: (Boolean) -> Unit
     ) {
-        if (db != null) {
-            db!!.collection("addresses")
-                .whereEqualTo("userId", userId)
-                .get()
-                .addOnSuccessListener { snap ->
-                    val list = snap.toObjects(UserAddress::class.java)
+        scope.launch {
+            try {
+                val list = SupabaseClientProvider.client.postgrest["addresses"]
+                    .select {
+                        filter {
+                            eq("user_id", userId)
+                        }
+                    }.decodeList<UserAddress>()
+                withContext(Dispatchers.Main) {
                     if (list.isEmpty()) {
                         val hasFallback = fallbackAddresses.any { it.userId == userId }
                         onResult(hasFallback)
@@ -1296,34 +1371,36 @@ object FirebaseService {
                         onResult(true)
                     }
                 }
-                .addOnFailureListener {
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "hasUserAddress error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
                     val hasFallback = fallbackAddresses.any { it.userId == userId }
                     onResult(hasFallback)
                 }
-        } else {
-            val hasFallback = fallbackAddresses.any { it.userId == userId }
-            onResult(hasFallback)
+            }
         }
     }
 
     val fallbackInvoices = mutableListOf<Invoice>()
 
     fun getUserById(userId: String, onResult: (User?) -> Unit) {
-        if (db != null) {
-            db!!.collection("users").document(userId).get()
-                .addOnSuccessListener { snap ->
-                    val user = snap.toObject(User::class.java)
-                    if (user != null) {
-                        onResult(user)
-                    } else {
-                        onResult(fallbackUsers.find { it.userId == userId })
-                    }
+        scope.launch {
+            try {
+                val user = SupabaseClientProvider.client.postgrest["users"]
+                    .select {
+                        filter {
+                            eq("id", userId)
+                        }
+                    }.decodeSingle<User>()
+                withContext(Dispatchers.Main) {
+                    onResult(user)
                 }
-                .addOnFailureListener {
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "getUserById error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
                     onResult(fallbackUsers.find { it.userId == userId })
                 }
-        } else {
-            onResult(fallbackUsers.find { it.userId == userId })
+            }
         }
     }
 
