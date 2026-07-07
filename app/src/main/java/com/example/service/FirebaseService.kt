@@ -443,43 +443,49 @@ object FirebaseService {
 
     // --- Addresses ---
     fun getUserAddresses(userId: String, onResult: (List<UserAddress>) -> Unit) {
-        if (db != null) {
-            db!!.collection("addresses")
-                .whereEqualTo("userId", userId)
-                .get()
-                .addOnSuccessListener { snap ->
-                    val list = snap.toObjects(UserAddress::class.java)
+        scope.launch {
+            try {
+                val list = SupabaseClientProvider.client.postgrest["addresses"]
+                    .select {
+                        filter {
+                            eq("user_id", userId)
+                        }
+                    }.decodeList<UserAddress>()
+                withContext(Dispatchers.Main) {
                     if (list.isEmpty()) {
                         onResult(fallbackAddresses.filter { it.userId == userId })
                     } else {
                         onResult(list)
                     }
                 }
-                .addOnFailureListener {
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "getUserAddresses error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
                     onResult(fallbackAddresses.filter { it.userId == userId })
                 }
-        } else {
-            onResult(fallbackAddresses.filter { it.userId == userId })
+            }
         }
     }
 
     fun getAllAddresses(onResult: (List<UserAddress>) -> Unit) {
-        if (db != null) {
-            db!!.collection("addresses")
-                .get()
-                .addOnSuccessListener { snap ->
-                    val list = snap.toObjects(UserAddress::class.java)
+        scope.launch {
+            try {
+                val list = SupabaseClientProvider.client.postgrest["addresses"]
+                    .select()
+                    .decodeList<UserAddress>()
+                withContext(Dispatchers.Main) {
                     if (list.isEmpty()) {
                         onResult(fallbackAddresses)
                     } else {
                         onResult(list)
                     }
                 }
-                .addOnFailureListener {
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "getAllAddresses error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
                     onResult(fallbackAddresses)
                 }
-        } else {
-            onResult(fallbackAddresses)
+            }
         }
     }
 
@@ -497,16 +503,48 @@ object FirebaseService {
             }
         }
 
-        if (db != null) {
-            db!!.collection("addresses").document(id).set(finalAddr)
-                .addOnSuccessListener { 
-                    fallbackAddresses.add(finalAddr)
-                    onSuccess() 
+        scope.launch {
+            try {
+                if (finalAddr.isDefault) {
+                    try {
+                        SupabaseClientProvider.client.postgrest["addresses"]
+                            .update({
+                                set("is_default", false)
+                            }) {
+                                filter {
+                                    eq("user_id", finalAddr.userId)
+                                }
+                            }
+                    } catch (ex: Exception) {
+                        Log.e("FirebaseService", "saveAddress resetting defaults warning: ${ex.message}")
+                    }
                 }
-                .addOnFailureListener { e -> onFailure(e.localizedMessage ?: "فشل تسجيل العنوان") }
-        } else {
-            fallbackAddresses.add(finalAddr)
-            onSuccess()
+
+                SupabaseClientProvider.client.postgrest["addresses"].upsert(finalAddr)
+
+                // Sync local state
+                val idx = fallbackAddresses.indexOfFirst { it.addressId == id }
+                if (idx != -1) {
+                    fallbackAddresses[idx] = finalAddr
+                } else {
+                    fallbackAddresses.add(finalAddr)
+                }
+
+                withContext(Dispatchers.Main) {
+                    onSuccess()
+                }
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "saveAddress error: ${e.message}", e)
+                val idx = fallbackAddresses.indexOfFirst { it.addressId == id }
+                if (idx != -1) {
+                    fallbackAddresses[idx] = finalAddr
+                } else {
+                    fallbackAddresses.add(finalAddr)
+                }
+                withContext(Dispatchers.Main) {
+                    onSuccess()
+                }
+            }
         }
     }
 
@@ -519,32 +557,35 @@ object FirebaseService {
             }
         }
 
-        if (db != null) {
-            db!!.collection("addresses").document(addressId).update("isDefault", true)
-                .addOnSuccessListener {
-                    db!!.collection("addresses")
-                        .whereEqualTo("userId", userId)
-                        .get()
-                        .addOnSuccessListener { snap ->
-                            val batch = db!!.batch()
-                            for (doc in snap.documents) {
-                                if (doc.id != addressId) {
-                                    batch.update(doc.reference, "isDefault", false)
-                                }
-                            }
-                            batch.commit().addOnCompleteListener {
-                                onResult(true)
-                            }
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["addresses"]
+                    .update({
+                        set("is_default", false)
+                    }) {
+                        filter {
+                            eq("user_id", userId)
                         }
-                        .addOnFailureListener {
-                            onResult(true) // local succeeded anyway
+                    }
+
+                SupabaseClientProvider.client.postgrest["addresses"]
+                    .update({
+                        set("is_default", true)
+                    }) {
+                        filter {
+                            eq("id", addressId)
                         }
+                    }
+
+                withContext(Dispatchers.Main) {
+                    onResult(true)
                 }
-                .addOnFailureListener {
-                    onResult(false)
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "setDefaultAddress error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
                 }
-        } else {
-            onResult(true)
+            }
         }
     }
 
@@ -561,48 +602,47 @@ object FirebaseService {
             }
         }
 
-        if (db != null) {
-            db!!.collection("addresses").document(id).set(finalAddr)
-                .addOnSuccessListener {
-                    val idx = fallbackAddresses.indexOfFirst { it.addressId == id }
-                    if (idx != -1) {
-                        fallbackAddresses[idx] = finalAddr
-                    } else {
-                        fallbackAddresses.add(finalAddr)
-                    }
-                    if (finalAddr.isDefault) {
-                        db!!.collection("addresses")
-                            .whereEqualTo("userId", finalAddr.userId)
-                            .get()
-                            .addOnSuccessListener { snap ->
-                                val batch = db!!.batch()
-                                for (doc in snap.documents) {
-                                    if (doc.id != id) {
-                                        batch.update(doc.reference, "isDefault", false)
-                                    }
-                                }
-                                batch.commit().addOnCompleteListener {
-                                    onResult(true, id)
+        scope.launch {
+            try {
+                if (finalAddr.isDefault) {
+                    try {
+                        SupabaseClientProvider.client.postgrest["addresses"]
+                            .update({
+                                set("is_default", false)
+                            }) {
+                                filter {
+                                    eq("user_id", finalAddr.userId)
                                 }
                             }
-                            .addOnFailureListener {
-                                onResult(true, id)
-                            }
-                    } else {
-                        onResult(true, id)
+                    } catch (ex: Exception) {
+                        Log.e("FirebaseService", "addUserAddress resetting defaults warning: ${ex.message}")
                     }
                 }
-                .addOnFailureListener { e ->
-                    onResult(false, e.localizedMessage)
+
+                SupabaseClientProvider.client.postgrest["addresses"].upsert(finalAddr)
+
+                val idx = fallbackAddresses.indexOfFirst { it.addressId == id }
+                if (idx != -1) {
+                    fallbackAddresses[idx] = finalAddr
+                } else {
+                    fallbackAddresses.add(finalAddr)
                 }
-        } else {
-            val idx = fallbackAddresses.indexOfFirst { it.addressId == id }
-            if (idx != -1) {
-                fallbackAddresses[idx] = finalAddr
-            } else {
-                fallbackAddresses.add(finalAddr)
+
+                withContext(Dispatchers.Main) {
+                    onResult(true, id)
+                }
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "addUserAddress error: ${e.message}", e)
+                val idx = fallbackAddresses.indexOfFirst { it.addressId == id }
+                if (idx != -1) {
+                    fallbackAddresses[idx] = finalAddr
+                } else {
+                    fallbackAddresses.add(finalAddr)
+                }
+                withContext(Dispatchers.Main) {
+                    onResult(true, id)
+                }
             }
-            onResult(true, id)
         }
     }
 
@@ -624,36 +664,34 @@ object FirebaseService {
             fallbackAddresses.add(address)
         }
 
-        if (db != null) {
-            db!!.collection("addresses").document(id).set(address)
-                .addOnSuccessListener {
-                    if (address.isDefault) {
-                        db!!.collection("addresses")
-                            .whereEqualTo("userId", address.userId)
-                            .get()
-                            .addOnSuccessListener { snap ->
-                                val batch = db!!.batch()
-                                for (doc in snap.documents) {
-                                    if (doc.id != id) {
-                                        batch.update(doc.reference, "isDefault", false)
-                                    }
-                                }
-                                batch.commit().addOnCompleteListener {
-                                    onResult(true)
+        scope.launch {
+            try {
+                if (address.isDefault) {
+                    try {
+                        SupabaseClientProvider.client.postgrest["addresses"]
+                            .update({
+                                set("is_default", false)
+                            }) {
+                                filter {
+                                    eq("user_id", address.userId)
                                 }
                             }
-                            .addOnFailureListener {
-                                onResult(true)
-                            }
-                    } else {
-                        onResult(true)
+                    } catch (ex: Exception) {
+                        Log.e("FirebaseService", "updateUserAddress resetting defaults warning: ${ex.message}")
                     }
                 }
-                .addOnFailureListener {
-                    onResult(false)
+
+                SupabaseClientProvider.client.postgrest["addresses"].upsert(address)
+
+                withContext(Dispatchers.Main) {
+                    onResult(true)
                 }
-        } else {
-            onResult(true)
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "updateUserAddress error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            }
         }
     }
 
