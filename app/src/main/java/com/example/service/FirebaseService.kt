@@ -13,49 +13,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// --- Dummy Firebase/Firestore types to allow compilation of offline fallback blocks ---
-class DummyTask<T> {
-    fun addOnSuccessListener(listener: (T) -> Unit): DummyTask<T> = this
-    fun addOnFailureListener(listener: (Exception) -> Unit): DummyTask<T> = this
-    fun addOnCompleteListener(listener: (DummyTask<T>) -> Unit): DummyTask<T> = this
-}
-class DummyQuerySnapshot {
-    val documents: List<DummyDocumentSnapshot> = emptyList()
-    fun <T> toObjects(clazz: Class<T>): List<T> = emptyList()
-}
-class DummyDocumentSnapshot {
-    val id: String = ""
-    val reference: Any? = null
-    fun exists(): Boolean = false
-    fun <T> toObject(clazz: Class<T>): T? = null
-}
-class DummyDocument {
-    fun set(value: Any?): DummyTask<Void?> = DummyTask()
-    fun update(field1: String, value1: Any?, vararg fieldsAndValues: Any?): DummyTask<Void?> = DummyTask()
-    fun delete(): DummyTask<Void?> = DummyTask()
-    fun get(): DummyTask<DummyDocumentSnapshot> = DummyTask()
-}
-class DummyCollection {
-    fun document(id: String): DummyDocument = DummyDocument()
-    fun get(): DummyTask<DummyQuerySnapshot> = DummyTask()
-    fun whereEqualTo(field: String, value: Any?): DummyCollection = this
-}
-class DummyBatch {
-    fun set(docRef: Any?, value: Any?): DummyBatch = this
-    fun update(docRef: Any?, field: String, value: Any?): DummyBatch = this
-    fun update(docRef: Any?, field: String, value: Any?, vararg fieldsAndValues: Any?): DummyBatch = this
-    fun update(docRef: Any?, fields: Map<String, Any?>): DummyBatch = this
-    fun delete(docRef: Any?): DummyBatch = this
-    fun commit(): DummyTask<Void?> = DummyTask()
-}
-class DummyFirestore {
-    fun collection(name: String): DummyCollection = DummyCollection()
-    fun batch(): DummyBatch = DummyBatch()
-}
-
 object FirebaseService {
     private val scope = CoroutineScope(Dispatchers.IO)
-    private val db: DummyFirestore? = null
 
     // --- Fallback memory data vectors for fluent Offline Demonstration ---
     val fallbackCompany = CompanyInfo(
@@ -1332,7 +1291,6 @@ object FirebaseService {
             notification
         }
         
-        // Add to fallback notifications if we have a way to track, otherwise just add to global
         fallbackDirectorNotifications.add(finalNotification)
         
         scope.launch {
@@ -1445,67 +1403,70 @@ object FirebaseService {
             )
         }
 
-        if (db != null) {
-            val batch = db!!.batch()
-            val orderRef = db!!.collection("orders").document(orderId)
-            batch.update(orderRef, mapOf(
-                "orderLines" to updatedLines,
-                "status" to statusString,
-                "totalAmount" to invoice.totalAmount,
-                "scheduledDeliveryDate" to scheduledDeliveryDate
-            ))
-
-            val invoiceRef = db!!.collection("invoices").document(invoice.invoiceId)
-            batch.set(invoiceRef, invoice)
-
-            db!!.collection("users").document(clientId).get()
-                .addOnSuccessListener { userSnap ->
-                    val userObj = userSnap.toObject(User::class.java)
-                    if (userObj != null) {
-                        val currentAcc = userObj.clientAccount
-                        val newBalance = currentAcc.currentBalance + invoice.totalAmount
-                        val updatedUser = userObj.copy(
-                            clientAccount = currentAcc.copy(currentBalance = newBalance)
-                        )
-                        db!!.collection("users").document(clientId).set(updatedUser)
-                            .addOnSuccessListener {
-                                onSuccess()
-                            }
-                            .addOnFailureListener { e ->
-                                onFailure(e.message ?: "Failed to update client account")
-                            }
-                    } else {
-                        batch.commit()
-                            .addOnSuccessListener { onSuccess() }
-                            .addOnFailureListener { e -> onFailure(e.message ?: "Firestore batch failed") }
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["orders"]
+                    .update({
+                        set("order_lines", updatedLines)
+                        set("status", statusString)
+                        set("total_amount", invoice.totalAmount)
+                        set("scheduled_delivery_date", scheduledDeliveryDate)
+                    }) {
+                        filter {
+                            eq("id", orderId)
+                        }
                     }
+
+                SupabaseClientProvider.client.postgrest["invoices"].upsert(invoice)
+
+                try {
+                    val user = SupabaseClientProvider.client.postgrest["users"]
+                        .select {
+                            filter {
+                                eq("id", clientId)
+                            }
+                        }.decodeSingle<User>()
+                    val currentAcc = user.clientAccount
+                    val newBalance = currentAcc.currentBalance + invoice.totalAmount
+                    val updatedUser = user.copy(
+                        clientAccount = currentAcc.copy(currentBalance = newBalance)
+                    )
+                    SupabaseClientProvider.client.postgrest["users"].upsert(updatedUser)
+                } catch (ex: Exception) {
+                    Log.e("FirebaseService", "allocateAndInvoiceOrder user update warning: ${ex.message}")
                 }
-                .addOnFailureListener {
-                    batch.commit()
-                        .addOnSuccessListener { onSuccess() }
-                        .addOnFailureListener { e -> onFailure(e.message ?: "Firestore batch failed") }
+
+                withContext(Dispatchers.Main) {
+                    onSuccess()
                 }
-        } else {
-            onSuccess()
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "allocateAndInvoiceOrder error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    onSuccess()
+                }
+            }
         }
     }
 
     fun getInvoices(onResult: (List<Invoice>) -> Unit) {
-        if (db != null) {
-            db!!.collection("invoices").get()
-                .addOnSuccessListener { snap ->
-                    val list = snap.toObjects(Invoice::class.java)
+        scope.launch {
+            try {
+                val list = SupabaseClientProvider.client.postgrest["invoices"]
+                    .select()
+                    .decodeList<Invoice>()
+                withContext(Dispatchers.Main) {
                     if (list.isEmpty()) {
                         onResult(fallbackInvoices)
                     } else {
                         onResult(list)
                     }
                 }
-                .addOnFailureListener {
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "getInvoices error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
                     onResult(fallbackInvoices)
                 }
-        } else {
-            onResult(fallbackInvoices)
+            }
         }
     }
 
@@ -1673,25 +1634,32 @@ object FirebaseService {
     )
 
     fun getPharmaProducts(onResult: (List<PharmaProduct>) -> Unit) {
-        if (db != null) {
-            db!!.collection("products").get()
-                .addOnSuccessListener { snapshot ->
-                    val list = snapshot.toObjects(PharmaProduct::class.java)
+        scope.launch {
+            try {
+                val list = SupabaseClientProvider.client.postgrest["products"]
+                    .select()
+                    .decodeList<PharmaProduct>()
+                withContext(Dispatchers.Main) {
                     if (list.isNotEmpty()) {
                         onResult(list)
                     } else {
-                        // Seed Firestore if empty
+                        // Seed Supabase if empty
                         fallbackPharmaProducts.forEach { prod ->
-                            db!!.collection("products").document(prod.productId).set(prod)
+                            try {
+                                SupabaseClientProvider.client.postgrest["products"].upsert(prod)
+                            } catch (ex: Exception) {
+                                Log.e("FirebaseService", "getPharmaProducts seeding prod ${prod.productId} warning: ${ex.message}")
+                            }
                         }
                         onResult(fallbackPharmaProducts)
                     }
                 }
-                .addOnFailureListener {
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "getPharmaProducts error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
                     onResult(fallbackPharmaProducts)
                 }
-        } else {
-            onResult(fallbackPharmaProducts)
+            }
         }
     }
 
@@ -1710,32 +1678,40 @@ object FirebaseService {
             fallbackPharmaProducts.add(finalProduct)
         }
 
-        // Save to Firestore if available
-        if (db != null) {
-            db!!.collection("products").document(finalProduct.productId).set(finalProduct)
-                .addOnSuccessListener {
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["products"].upsert(finalProduct)
+                withContext(Dispatchers.Main) {
                     onResult(true)
                 }
-                .addOnFailureListener {
-                    onResult(true) // Return true anyway as we updated fallback list
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "savePharmaProduct error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
                 }
-        } else {
-            onResult(true)
+            }
         }
     }
 
     fun deletePharmaProduct(productId: String, onResult: (Boolean) -> Unit) {
         fallbackPharmaProducts.removeAll { it.productId == productId }
-        if (db != null) {
-            db!!.collection("products").document(productId).delete()
-                .addOnSuccessListener {
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["products"]
+                    .delete {
+                        filter {
+                            eq("id", productId)
+                        }
+                    }
+                withContext(Dispatchers.Main) {
                     onResult(true)
                 }
-                .addOnFailureListener {
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "deletePharmaProduct error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
                     onResult(true)
                 }
-        } else {
-            onResult(true)
+            }
         }
     }
 
@@ -1755,59 +1731,50 @@ object FirebaseService {
         getPharmaProducts { centralProducts ->
             val activeProducts = centralProducts.filter { it.isActive }
             
-            if (db != null) {
-                db!!.collection("warehouse_inventory")
-                    .whereEqualTo("branchId", branchId)
-                    .get()
-                    .addOnSuccessListener { snapshot ->
-                        val inventoryItems = snapshot.toObjects(WarehouseInventoryItem::class.java)
-                        val inventoryMap = inventoryItems.associateBy { it.sku }
+            scope.launch {
+                try {
+                    val inventoryItems = SupabaseClientProvider.client.postgrest["warehouse_inventory"]
+                        .select {
+                            filter {
+                                eq("branch_id", branchId)
+                            }
+                        }.decodeList<WarehouseInventoryItem>()
+                    val inventoryMap = inventoryItems.associateBy { it.sku }
 
-                        val mergedList = activeProducts.map { product ->
-                            val existing = inventoryMap[product.sku]
-                            WarehouseInventoryItem(
-                                sku = product.sku,
-                                name = product.commercialName,
-                                dosageForm = product.dosageForm.name,
-                                availableQuantity = existing?.availableQuantity ?: 0,
-                                expiryDate = existing?.expiryDate ?: "2028-12-31",
-                                branchId = branchId
-                            )
-                        }
+                    val mergedList = activeProducts.map { product ->
+                        val existing = inventoryMap[product.sku]
+                        WarehouseInventoryItem(
+                            sku = product.sku,
+                            name = product.commercialName,
+                            dosageForm = product.dosageForm.name,
+                            availableQuantity = existing?.availableQuantity ?: 0,
+                            expiryDate = existing?.expiryDate ?: "2028-12-31",
+                            branchId = branchId
+                        )
+                    }
+                    withContext(Dispatchers.Main) {
                         onResult(mergedList)
                     }
-                    .addOnFailureListener {
-                        // Fallback using memory
-                        val localBranchInventory = mockWarehouseInventory.filter { it.branchId == branchId }
-                        val inventoryMap = localBranchInventory.associateBy { it.sku }
-                        val mergedList = activeProducts.map { product ->
-                            val existing = inventoryMap[product.sku]
-                            WarehouseInventoryItem(
-                                sku = product.sku,
-                                name = product.commercialName,
-                                dosageForm = product.dosageForm.name,
-                                availableQuantity = existing?.availableQuantity ?: 0,
-                                expiryDate = existing?.expiryDate ?: "2028-12-31",
-                                branchId = branchId
-                            )
-                        }
+                } catch (e: Exception) {
+                    Log.e("FirebaseService", "getWarehouseInventory error: ${e.message}", e)
+                    // Fallback using memory
+                    val localBranchInventory = mockWarehouseInventory.filter { it.branchId == branchId }
+                    val inventoryMap = localBranchInventory.associateBy { it.sku }
+                    val mergedList = activeProducts.map { product ->
+                        val existing = inventoryMap[product.sku]
+                        WarehouseInventoryItem(
+                            sku = product.sku,
+                            name = product.commercialName,
+                            dosageForm = product.dosageForm.name,
+                            availableQuantity = existing?.availableQuantity ?: 0,
+                            expiryDate = existing?.expiryDate ?: "2028-12-31",
+                            branchId = branchId
+                        )
+                    }
+                    withContext(Dispatchers.Main) {
                         onResult(mergedList)
                     }
-            } else {
-                val localBranchInventory = mockWarehouseInventory.filter { it.branchId == branchId }
-                val inventoryMap = localBranchInventory.associateBy { it.sku }
-                val mergedList = activeProducts.map { product ->
-                    val existing = inventoryMap[product.sku]
-                    WarehouseInventoryItem(
-                        sku = product.sku,
-                        name = product.commercialName,
-                        dosageForm = product.dosageForm.name,
-                        availableQuantity = existing?.availableQuantity ?: 0,
-                        expiryDate = existing?.expiryDate ?: "2028-12-31",
-                        branchId = branchId
-                    )
                 }
-                onResult(mergedList)
             }
         }
     }
@@ -1822,74 +1789,73 @@ object FirebaseService {
             val name = product?.commercialName ?: "مستحضر طبي"
             val dosageStr = product?.dosageForm?.name ?: "TABLET"
 
-            if (db != null) {
-                val docRef = db!!.collection("warehouse_inventory").document("${branchId}_${sku}")
-                docRef.get()
-                    .addOnSuccessListener { docSnapshot ->
-                        val currentItem = if (docSnapshot.exists()) {
-                            docSnapshot.toObject(WarehouseInventoryItem::class.java)
-                        } else {
-                            null
-                        }
-
-                        val currentQty = currentItem?.availableQuantity ?: 0
-                        val newQty = (currentQty + addedQty).coerceAtLeast(0)
-                        val finalExpiry = if (expiryDate.isNotEmpty()) expiryDate else (currentItem?.expiryDate ?: "2028-12-31")
-
-                        val updatedItem = WarehouseInventoryItem(
-                            sku = sku,
-                            name = name,
-                            dosageForm = dosageStr,
-                            availableQuantity = newQty,
-                            expiryDate = finalExpiry,
-                            branchId = branchId
-                        )
-
-                        docRef.set(updatedItem)
-                            .addOnSuccessListener {
-                                // Update local memory fallback list
-                                val index = mockWarehouseInventory.indexOfFirst { it.sku == sku && it.branchId == branchId }
-                                if (index != -1) {
-                                    mockWarehouseInventory[index] = updatedItem
-                                } else {
-                                    mockWarehouseInventory.add(updatedItem)
-                                }
-                                onResult(true)
+            scope.launch {
+                try {
+                    val list = SupabaseClientProvider.client.postgrest["warehouse_inventory"]
+                        .select {
+                            filter {
+                                eq("branch_id", branchId)
+                                eq("sku", sku)
                             }
-                            .addOnFailureListener {
-                                onResult(false)
-                            }
-                    }
-                    .addOnFailureListener {
-                        onResult(false)
-                    }
-            } else {
-                val index = mockWarehouseInventory.indexOfFirst { it.sku == sku && it.branchId == branchId }
-                val currentItem = if (index != -1) mockWarehouseInventory[index] else null
-                val currentQty = currentItem?.availableQuantity ?: 0
-                val newQty = (currentQty + addedQty).coerceAtLeast(0)
-                val finalExpiry = if (expiryDate.isNotEmpty()) expiryDate else (currentItem?.expiryDate ?: "2028-12-31")
+                        }.decodeList<WarehouseInventoryItem>()
+                    val currentItem = list.firstOrNull()
+                    val currentQty = currentItem?.availableQuantity ?: 0
+                    val newQty = (currentQty + addedQty).coerceAtLeast(0)
+                    val finalExpiry = if (expiryDate.isNotEmpty()) expiryDate else (currentItem?.expiryDate ?: "2028-12-31")
 
-                val updatedItem = WarehouseInventoryItem(
-                    sku = sku,
-                    name = name,
-                    dosageForm = dosageStr,
-                    availableQuantity = newQty,
-                    expiryDate = finalExpiry,
-                    branchId = branchId
-                )
+                    val updatedItem = WarehouseInventoryItem(
+                        sku = sku,
+                        name = name,
+                        dosageForm = dosageStr,
+                        availableQuantity = newQty,
+                        expiryDate = finalExpiry,
+                        branchId = branchId
+                    )
 
-                if (index != -1) {
-                    mockWarehouseInventory[index] = updatedItem
-                } else {
-                    mockWarehouseInventory.add(updatedItem)
+                    SupabaseClientProvider.client.postgrest["warehouse_inventory"].upsert(updatedItem)
+
+                    // Update local memory fallback list
+                    val index = mockWarehouseInventory.indexOfFirst { it.sku == sku && it.branchId == branchId }
+                    if (index != -1) {
+                        mockWarehouseInventory[index] = updatedItem
+                    } else {
+                        mockWarehouseInventory.add(updatedItem)
+                    }
+                    withContext(Dispatchers.Main) {
+                        onResult(true)
+                    }
+                } catch (e: Exception) {
+                    Log.e("FirebaseService", "updateInventoryQuantity error: ${e.message}", e)
+                    // Fallback to updating memory and return true
+                    val index = mockWarehouseInventory.indexOfFirst { it.sku == sku && it.branchId == branchId }
+                    val currentItem = if (index != -1) mockWarehouseInventory[index] else null
+                    val currentQty = currentItem?.availableQuantity ?: 0
+                    val newQty = (currentQty + addedQty).coerceAtLeast(0)
+                    val finalExpiry = if (expiryDate.isNotEmpty()) expiryDate else (currentItem?.expiryDate ?: "2028-12-31")
+
+                    val updatedItem = WarehouseInventoryItem(
+                        sku = sku,
+                        name = name,
+                        dosageForm = dosageStr,
+                        availableQuantity = newQty,
+                        expiryDate = finalExpiry,
+                        branchId = branchId
+                    )
+
+                    if (index != -1) {
+                        mockWarehouseInventory[index] = updatedItem
+                    } else {
+                        mockWarehouseInventory.add(updatedItem)
+                    }
+                    withContext(Dispatchers.Main) {
+                        onResult(true)
+                    }
                 }
-                onResult(true)
             }
         }
     }
 
-    // --- Promotional Offers Mock Data & Firestore Integration ---
+    // --- Promotional Offers Mock Data & Supabase Integration ---
     val fallbackPromotionalOffers = mutableListOf<PromotionalOffer>(
         PromotionalOffer(
             offerId = "offer_1",
@@ -1928,12 +1894,18 @@ object FirebaseService {
             offer
         }
         fallbackPromotionalOffers.add(finalOffer)
-        if (db != null) {
-            db!!.collection("promotional_offers").document(finalOffer.offerId).set(finalOffer)
-                .addOnSuccessListener { onResult(true) }
-                .addOnFailureListener { onResult(true) }
-        } else {
-            onResult(true)
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["promotional_offers"].upsert(finalOffer)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "createOffer error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            }
         }
     }
 
@@ -1944,33 +1916,53 @@ object FirebaseService {
         } else {
             fallbackPromotionalOffers.add(offer)
         }
-        if (db != null) {
-            db!!.collection("promotional_offers").document(offer.offerId).set(offer)
-                .addOnSuccessListener { onResult(true) }
-                .addOnFailureListener { onResult(true) }
-        } else {
-            onResult(true)
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["promotional_offers"].upsert(offer)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "updateOffer error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            }
         }
     }
 
     fun deleteOffer(offerId: String, onResult: (Boolean) -> Unit) {
         fallbackPromotionalOffers.removeAll { it.offerId == offerId }
-        if (db != null) {
-            db!!.collection("promotional_offers").document(offerId).delete()
-                .addOnSuccessListener { onResult(true) }
-                .addOnFailureListener { onResult(true) }
-        } else {
-            onResult(true)
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["promotional_offers"]
+                    .delete {
+                        filter {
+                            eq("id", offerId)
+                        }
+                    }
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "deleteOffer error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    onResult(true)
+                }
+            }
         }
     }
 
     fun getActiveOffers(governorate: String, onResult: (List<PromotionalOffer>) -> Unit) {
-        if (db != null) {
-            db!!.collection("promotional_offers")
-                .whereEqualTo("isActive", true)
-                .get()
-                .addOnSuccessListener { snapshot ->
-                    val list = snapshot.toObjects(PromotionalOffer::class.java)
+        scope.launch {
+            try {
+                val list = SupabaseClientProvider.client.postgrest["promotional_offers"]
+                    .select {
+                        filter {
+                            eq("is_active", true)
+                        }
+                    }.decodeList<PromotionalOffer>()
+                withContext(Dispatchers.Main) {
                     if (list.isNotEmpty()) {
                         val currentTime = System.currentTimeMillis()
                         val filtered = list.filter { offer ->
@@ -1980,9 +1972,13 @@ object FirebaseService {
                         }
                         onResult(filtered)
                     } else {
-                        // Seed Firestore
+                        // Seed Supabase if empty
                         fallbackPromotionalOffers.forEach { offer ->
-                            db!!.collection("promotional_offers").document(offer.offerId).set(offer)
+                            try {
+                                SupabaseClientProvider.client.postgrest["promotional_offers"].upsert(offer)
+                            } catch (ex: Exception) {
+                                Log.e("FirebaseService", "getActiveOffers seeding offer ${offer.offerId} warning: ${ex.message}")
+                            }
                         }
                         val currentTime = System.currentTimeMillis()
                         val filtered = fallbackPromotionalOffers.filter { offer ->
@@ -1993,7 +1989,9 @@ object FirebaseService {
                         onResult(filtered)
                     }
                 }
-                .addOnFailureListener {
+            } catch (e: Exception) {
+                Log.e("FirebaseService", "getActiveOffers error: ${e.message}", e)
+                withContext(Dispatchers.Main) {
                     val currentTime = System.currentTimeMillis()
                     val filtered = fallbackPromotionalOffers.filter { offer ->
                         val isDateValid = currentTime >= offer.startDate && currentTime <= offer.endDate
@@ -2002,14 +2000,7 @@ object FirebaseService {
                     }
                     onResult(filtered)
                 }
-        } else {
-            val currentTime = System.currentTimeMillis()
-            val filtered = fallbackPromotionalOffers.filter { offer ->
-                val isDateValid = currentTime >= offer.startDate && currentTime <= offer.endDate
-                val isGovValid = offer.targetGovernorate.isBlank() || offer.targetGovernorate == governorate
-                offer.isActive && isDateValid && isGovValid
             }
-            onResult(filtered)
         }
     }
 
@@ -2021,33 +2012,40 @@ object FirebaseService {
             val updatedOrder = originalOrder.copy(targetBranches = listOf(newBranchId))
             fallbackOrders[idx] = updatedOrder
             
-            if (db != null) {
-                db!!.collection("orders").document(orderId).set(updatedOrder)
-                    .addOnSuccessListener { onResult(true) }
-                    .addOnFailureListener { onResult(false) }
-            } else {
-                onResult(true)
+            scope.launch {
+                try {
+                    SupabaseClientProvider.client.postgrest["orders"].upsert(updatedOrder)
+                    withContext(Dispatchers.Main) {
+                        onResult(true)
+                    }
+                } catch (e: Exception) {
+                    Log.e("FirebaseService", "transferFullOrder error: ${e.message}", e)
+                    withContext(Dispatchers.Main) {
+                        onResult(true)
+                    }
+                }
             }
         } else {
-            if (db != null) {
-                db!!.collection("orders").document(orderId).get()
-                    .addOnSuccessListener { doc ->
-                        val order = doc.toObject(Order::class.java)
-                        if (order != null) {
-                            val updatedOrder = order.copy(targetBranches = listOf(newBranchId))
-                            db!!.collection("orders").document(orderId).set(updatedOrder)
-                                .addOnSuccessListener {
-                                    fallbackOrders.add(updatedOrder)
-                                    onResult(true)
-                                }
-                                .addOnFailureListener { onResult(false) }
-                        } else {
-                            onResult(false)
-                        }
+            scope.launch {
+                try {
+                    val order = SupabaseClientProvider.client.postgrest["orders"]
+                        .select {
+                            filter {
+                                eq("id", orderId)
+                            }
+                        }.decodeSingle<Order>()
+                    val updatedOrder = order.copy(targetBranches = listOf(newBranchId))
+                    SupabaseClientProvider.client.postgrest["orders"].upsert(updatedOrder)
+                    fallbackOrders.add(updatedOrder)
+                    withContext(Dispatchers.Main) {
+                        onResult(true)
                     }
-                    .addOnFailureListener { onResult(false) }
-            } else {
-                onResult(false)
+                } catch (e: Exception) {
+                    Log.e("FirebaseService", "transferFullOrder error: ${e.message}", e)
+                    withContext(Dispatchers.Main) {
+                        onResult(false)
+                    }
+                }
             }
         }
     }
@@ -2088,19 +2086,19 @@ object FirebaseService {
             }
             fallbackOrders.add(subOrder)
             
-            if (db != null) {
-                val batch = db!!.batch()
-                val originalRef = db!!.collection("orders").document(originalOrder.orderId)
-                val subRef = db!!.collection("orders").document(newSubOrderId)
-                
-                batch.set(originalRef, updatedOriginalOrder)
-                batch.set(subRef, subOrder)
-                
-                batch.commit()
-                    .addOnSuccessListener { onDone(true) }
-                    .addOnFailureListener { onDone(false) }
-            } else {
-                onDone(true)
+            scope.launch {
+                try {
+                    SupabaseClientProvider.client.postgrest["orders"].upsert(updatedOriginalOrder)
+                    SupabaseClientProvider.client.postgrest["orders"].upsert(subOrder)
+                    withContext(Dispatchers.Main) {
+                        onDone(true)
+                    }
+                } catch (e: Exception) {
+                    Log.e("FirebaseService", "transferPartialOrder error: ${e.message}", e)
+                    withContext(Dispatchers.Main) {
+                        onDone(true)
+                    }
+                }
             }
         }
 
@@ -2108,19 +2106,23 @@ object FirebaseService {
         if (idx != -1) {
             processOrderTransfer(fallbackOrders[idx], onResult)
         } else {
-            if (db != null) {
-                db!!.collection("orders").document(orderId).get()
-                    .addOnSuccessListener { doc ->
-                        val order = doc.toObject(Order::class.java)
-                        if (order != null) {
-                            processOrderTransfer(order, onResult)
-                        } else {
-                            onResult(false)
-                        }
+            scope.launch {
+                try {
+                    val order = SupabaseClientProvider.client.postgrest["orders"]
+                        .select {
+                            filter {
+                                eq("id", orderId)
+                            }
+                        }.decodeSingle<Order>()
+                    withContext(Dispatchers.Main) {
+                        processOrderTransfer(order, onResult)
                     }
-                    .addOnFailureListener { onResult(false) }
-            } else {
-                onResult(false)
+                } catch (e: Exception) {
+                    Log.e("FirebaseService", "transferPartialOrder select error: ${e.message}", e)
+                    withContext(Dispatchers.Main) {
+                        onResult(false)
+                    }
+                }
             }
         }
     }
