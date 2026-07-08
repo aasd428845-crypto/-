@@ -254,7 +254,10 @@ object FirebaseService {
     val fallbackDirectorNotifications = mutableListOf<DirectorNotification>()
 
     // Current Local User Simulation Session
-    var currentUserSession: User = fallbackUsers[3] // Default is client_1 (مستشفى الثورة العام)
+    var currentUserSession: User? = null
+
+    // Last database error for UI diagnosis
+    var lastDatabaseError: String? = null
 
     // --- Authentication ---
     fun getCurrentUser(onResult: (User?) -> Unit) {
@@ -280,7 +283,9 @@ object FirebaseService {
                     withContext(Dispatchers.Main) { onResult(currentUserSession) }
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "getCurrentUser error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "getCurrentUser failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
+                lastDatabaseError = "getCurrentUser: ${e.message}"
                 withContext(Dispatchers.Main) { onResult(currentUserSession) }
             }
         }
@@ -330,14 +335,10 @@ object FirebaseService {
                     withContext(Dispatchers.Main) { onResult(newMockUser, null) }
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "loginUser error: ${e.message}", e)
-                val user = fallbackUsers.find { it.email.trim().equals(email.trim(), ignoreCase = true) }
-                if (user != null) {
-                    currentUserSession = user
-                    withContext(Dispatchers.Main) { onResult(user, null) }
-                } else {
-                    withContext(Dispatchers.Main) { onResult(null, "خطأ في تسجيل الدخول: ${e.message}") }
-                }
+                Log.e("SUPABASE_DEBUG", "loginUser failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
+                lastDatabaseError = "loginUser: ${e.message}"
+                withContext(Dispatchers.Main) { onResult(null, "خطأ في الاتصال بقاعدة البيانات: ${e.message}") }
             }
         }
     }
@@ -377,7 +378,7 @@ object FirebaseService {
                         }
                     }
                 } catch (authEx: Exception) {
-                    Log.e("FirebaseService", "Auth signUpWith failed (non-blocking): ${authEx.message}")
+                    Log.e("SUPABASE_DEBUG", "Auth signUpWith failed (non-blocking): ${authEx.message}")
                 }
                 
                 currentUserSession = finalUser
@@ -386,16 +387,9 @@ object FirebaseService {
                 }
                 withContext(Dispatchers.Main) { onSuccess() }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "registerUser error: ${e.message}", e)
-                val exists = fallbackUsers.any { it.email.trim().equals(user.email.trim(), ignoreCase = true) }
-                if (exists) {
-                    withContext(Dispatchers.Main) { onFailure("عذراً، البريد الإلكتروني مسجل مسبقاً") }
-                    return@launch
-                }
-                val finalUser = user.copy(userId = if (user.userId.isEmpty()) "user_" + System.currentTimeMillis() else user.userId)
-                fallbackUsers.add(finalUser)
-                currentUserSession = finalUser
-                withContext(Dispatchers.Main) { onSuccess() }
+                Log.e("SUPABASE_DEBUG", "registerUser failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
+                withContext(Dispatchers.Main) { onFailure("خطأ في الاتصال بقاعدة البيانات: ${e.message}") }
             }
         }
     }
@@ -418,9 +412,10 @@ object FirebaseService {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "getUserAddresses error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "getUserAddresses failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
-                    onResult(fallbackAddresses.filter { it.userId == userId })
+                    onResult(emptyList())
                 }
             }
         }
@@ -440,9 +435,10 @@ object FirebaseService {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "getAllAddresses error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "getAllAddresses failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
-                    onResult(fallbackAddresses)
+                    onResult(emptyList())
                 }
             }
         }
@@ -475,7 +471,7 @@ object FirebaseService {
                                 }
                             }
                     } catch (ex: Exception) {
-                        Log.e("FirebaseService", "saveAddress resetting defaults warning: ${ex.message}")
+                        Log.e("SUPABASE_DEBUG", "saveAddress resetting defaults warning: ${ex.message}")
                     }
                 }
 
@@ -493,7 +489,8 @@ object FirebaseService {
                     onSuccess()
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "saveAddress error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "saveAddress failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 val idx = fallbackAddresses.indexOfFirst { it.addressId == id }
                 if (idx != -1) {
                     fallbackAddresses[idx] = finalAddr
@@ -540,7 +537,8 @@ object FirebaseService {
                     onResult(true)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "setDefaultAddress error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "setDefaultAddress failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onResult(true)
                 }
@@ -574,7 +572,7 @@ object FirebaseService {
                                 }
                             }
                     } catch (ex: Exception) {
-                        Log.e("FirebaseService", "addUserAddress resetting defaults warning: ${ex.message}")
+                        Log.e("SUPABASE_DEBUG", "addUserAddress resetting defaults warning: ${ex.message}")
                     }
                 }
 
@@ -591,7 +589,8 @@ object FirebaseService {
                     onResult(true, id)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "addUserAddress error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "addUserAddress failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 val idx = fallbackAddresses.indexOfFirst { it.addressId == id }
                 if (idx != -1) {
                     fallbackAddresses[idx] = finalAddr
@@ -636,7 +635,7 @@ object FirebaseService {
                                 }
                             }
                     } catch (ex: Exception) {
-                        Log.e("FirebaseService", "updateUserAddress resetting defaults warning: ${ex.message}")
+                        Log.e("SUPABASE_DEBUG", "updateUserAddress resetting defaults warning: ${ex.message}")
                     }
                 }
 
@@ -646,7 +645,8 @@ object FirebaseService {
                     onResult(true)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "updateUserAddress error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "updateUserAddress failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onResult(true)
                 }
@@ -672,7 +672,8 @@ object FirebaseService {
                     onResult(true)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "deleteUserAddress error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "deleteUserAddress failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onResult(true)
                 }
@@ -698,9 +699,10 @@ object FirebaseService {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "getBankAccounts error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "getBankAccounts failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
-                    onResult(fallbackBankAccounts.filter { it.userId == userId })
+                    onResult(emptyList())
                 }
             }
         }
@@ -731,7 +733,7 @@ object FirebaseService {
                                 }
                             }
                     } catch (ex: Exception) {
-                        Log.e("FirebaseService", "saveBankAccount resetting defaults warning: ${ex.message}")
+                        Log.e("SUPABASE_DEBUG", "saveBankAccount resetting defaults warning: ${ex.message}")
                     }
                 }
 
@@ -749,7 +751,8 @@ object FirebaseService {
                     onSuccess()
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "saveBankAccount error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "saveBankAccount failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 val idx = fallbackBankAccounts.indexOfFirst { it.accountId == id }
                 if (idx != -1) {
                     fallbackBankAccounts[idx] = finalAcc
@@ -783,7 +786,7 @@ object FirebaseService {
     }
 
     fun getPriceOffers(userId: String, onResult: (List<PriceOffer>) -> Unit) {
-        val list = fallbackPriceOffers.filter { it.supplierId == userId || currentUserSession.role == "hospital" }
+        val list = fallbackPriceOffers.filter { it.supplierId == userId || currentUserSession?.role == "hospital" }
         onResult(list)
     }
 
@@ -820,7 +823,7 @@ object FirebaseService {
             val newOrder = Order(
                 orderId = "order_" + offer.priceOfferId,
                 priceOfferId = offer.priceOfferId,
-                hospitalId = currentUserSession.userId,
+                hospitalId = currentUserSession?.userId ?: "",
                 supplierId = offer.supplierId,
                 medicineName = offer.medicineName,
                 price = offer.price,
@@ -992,9 +995,10 @@ object FirebaseService {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "getBranchOrders error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "getBranchOrders failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
-                    onResult(fallbackOrders.filter { it.targetBranches.contains(branchId) || it.targetBranches.isEmpty() })
+                    onResult(emptyList())
                 }
             }
         }
@@ -1028,7 +1032,8 @@ object FirebaseService {
                     onResult(true)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "rejectBranchOffer error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "rejectBranchOffer failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onResult(true)
                 }
@@ -1269,7 +1274,8 @@ object FirebaseService {
                     onResult(true)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "updateBranchLocation error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "updateBranchLocation failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onResult(true)
                 }
@@ -1300,7 +1306,8 @@ object FirebaseService {
                     onResult(true)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "notifyDirector error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "notifyDirector failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onResult(true)
                 }
@@ -1330,10 +1337,10 @@ object FirebaseService {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "hasUserAddress error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "hasUserAddress failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
-                    val hasFallback = fallbackAddresses.any { it.userId == userId }
-                    onResult(hasFallback)
+                    onResult(false)
                 }
             }
         }
@@ -1354,9 +1361,10 @@ object FirebaseService {
                     onResult(user)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "getUserById error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "getUserById failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
-                    onResult(fallbackUsers.find { it.userId == userId })
+                    onResult(null)
                 }
             }
         }
@@ -1433,14 +1441,15 @@ object FirebaseService {
                     )
                     SupabaseClientProvider.client.postgrest["users"].upsert(updatedUser)
                 } catch (ex: Exception) {
-                    Log.e("FirebaseService", "allocateAndInvoiceOrder user update warning: ${ex.message}")
+                    Log.e("SUPABASE_DEBUG", "allocateAndInvoiceOrder user update warning: ${ex.message}")
                 }
 
                 withContext(Dispatchers.Main) {
                     onSuccess()
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "allocateAndInvoiceOrder error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "allocateAndInvoiceOrder failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onSuccess()
                 }
@@ -1462,9 +1471,10 @@ object FirebaseService {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "getInvoices error: ${e.message}", e)
+                    Log.e("SUPABASE_DEBUG", "getInvoices failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
-                    onResult(fallbackInvoices)
+                    onResult(emptyList())
                 }
             }
         }
@@ -1648,16 +1658,17 @@ object FirebaseService {
                             try {
                                 SupabaseClientProvider.client.postgrest["products"].upsert(prod)
                             } catch (ex: Exception) {
-                                Log.e("FirebaseService", "getPharmaProducts seeding prod ${prod.productId} warning: ${ex.message}")
+                                Log.e("SUPABASE_DEBUG", "getPharmaProducts seeding prod ${prod.productId} warning: ${ex.message}")
                             }
                         }
                         onResult(fallbackPharmaProducts)
                     }
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "getPharmaProducts error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "getPharmaProducts failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
-                    onResult(fallbackPharmaProducts)
+                    onResult(emptyList())
                 }
             }
         }
@@ -1685,7 +1696,8 @@ object FirebaseService {
                     onResult(true)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "savePharmaProduct error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "savePharmaProduct failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onResult(true)
                 }
@@ -1707,7 +1719,8 @@ object FirebaseService {
                     onResult(true)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "deletePharmaProduct error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "deletePharmaProduct failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onResult(true)
                 }
@@ -1756,7 +1769,8 @@ object FirebaseService {
                         onResult(mergedList)
                     }
                 } catch (e: Exception) {
-                    Log.e("FirebaseService", "getWarehouseInventory error: ${e.message}", e)
+                    Log.e("SUPABASE_DEBUG", "getWarehouseInventory failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                     // Fallback using memory
                     val localBranchInventory = mockWarehouseInventory.filter { it.branchId == branchId }
                     val inventoryMap = localBranchInventory.associateBy { it.sku }
@@ -1825,7 +1839,8 @@ object FirebaseService {
                         onResult(true)
                     }
                 } catch (e: Exception) {
-                    Log.e("FirebaseService", "updateInventoryQuantity error: ${e.message}", e)
+                    Log.e("SUPABASE_DEBUG", "updateInventoryQuantity failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                     // Fallback to updating memory and return true
                     val index = mockWarehouseInventory.indexOfFirst { it.sku == sku && it.branchId == branchId }
                     val currentItem = if (index != -1) mockWarehouseInventory[index] else null
@@ -1901,7 +1916,8 @@ object FirebaseService {
                     onResult(true)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "createOffer error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "createOffer failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onResult(true)
                 }
@@ -1923,7 +1939,8 @@ object FirebaseService {
                     onResult(true)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "updateOffer error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "updateOffer failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onResult(true)
                 }
@@ -1945,7 +1962,8 @@ object FirebaseService {
                     onResult(true)
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "deleteOffer error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "deleteOffer failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
                     onResult(true)
                 }
@@ -1977,7 +1995,7 @@ object FirebaseService {
                             try {
                                 SupabaseClientProvider.client.postgrest["promotional_offers"].upsert(offer)
                             } catch (ex: Exception) {
-                                Log.e("FirebaseService", "getActiveOffers seeding offer ${offer.offerId} warning: ${ex.message}")
+                                Log.e("SUPABASE_DEBUG", "getActiveOffers seeding offer ${offer.offerId} warning: ${ex.message}")
                             }
                         }
                         val currentTime = System.currentTimeMillis()
@@ -1990,15 +2008,10 @@ object FirebaseService {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("FirebaseService", "getActiveOffers error: ${e.message}", e)
+                Log.e("SUPABASE_DEBUG", "getActiveOffers failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                 withContext(Dispatchers.Main) {
-                    val currentTime = System.currentTimeMillis()
-                    val filtered = fallbackPromotionalOffers.filter { offer ->
-                        val isDateValid = currentTime >= offer.startDate && currentTime <= offer.endDate
-                        val isGovValid = offer.targetGovernorate.isBlank() || offer.targetGovernorate == governorate
-                        offer.isActive && isDateValid && isGovValid
-                    }
-                    onResult(filtered)
+                    onResult(emptyList())
                 }
             }
         }
@@ -2019,7 +2032,8 @@ object FirebaseService {
                         onResult(true)
                     }
                 } catch (e: Exception) {
-                    Log.e("FirebaseService", "transferFullOrder error: ${e.message}", e)
+                    Log.e("SUPABASE_DEBUG", "transferFullOrder failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                     withContext(Dispatchers.Main) {
                         onResult(true)
                     }
@@ -2041,7 +2055,8 @@ object FirebaseService {
                         onResult(true)
                     }
                 } catch (e: Exception) {
-                    Log.e("FirebaseService", "transferFullOrder error: ${e.message}", e)
+                    Log.e("SUPABASE_DEBUG", "transferFullOrder failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                     withContext(Dispatchers.Main) {
                         onResult(false)
                     }
@@ -2094,7 +2109,8 @@ object FirebaseService {
                         onDone(true)
                     }
                 } catch (e: Exception) {
-                    Log.e("FirebaseService", "transferPartialOrder error: ${e.message}", e)
+                    Log.e("SUPABASE_DEBUG", "transferPartialOrder failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                     withContext(Dispatchers.Main) {
                         onDone(true)
                     }
@@ -2118,7 +2134,8 @@ object FirebaseService {
                         processOrderTransfer(order, onResult)
                     }
                 } catch (e: Exception) {
-                    Log.e("FirebaseService", "transferPartialOrder select error: ${e.message}", e)
+                    Log.e("SUPABASE_DEBUG", "transferPartialOrder select failed: ${e.message} | ${e.stackTraceToString()}")
+                lastDatabaseError = "${e.message}"
                     withContext(Dispatchers.Main) {
                         onResult(false)
                     }

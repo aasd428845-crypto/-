@@ -69,9 +69,11 @@ fun BranchManagerScreen(
     var issuedInvoices by remember { mutableStateOf<List<Invoice>>(emptyList()) }
     var clientUsersList by remember { mutableStateOf<List<User>>(emptyList()) }
     var isRefreshing by remember { mutableStateOf(false) }
+    var dbError by remember { mutableStateOf<String?>(null) }
 
     fun refreshData() {
         isRefreshing = true
+        dbError = FirebaseService.lastDatabaseError
         
         // 1. Fetch orders for Allocation (Status: Submitted)
         FirebaseService.getOrders { allOrders ->
@@ -202,6 +204,30 @@ fun BranchManagerScreen(
                             .fillMaxSize()
                             .background(Color(0xFFF8FAFC))
                     ) {
+                        // ⚠️ Error Banner
+                        if (dbError != null) {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3F3)),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("⚠️", fontSize = 18.sp)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = dbError!!,
+                                        color = Color(0xFFDC2626),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
+
                         // Manager Warehouse Welcome Card
                         Card(
                             colors = CardDefaults.cardColors(containerColor = Color.White),

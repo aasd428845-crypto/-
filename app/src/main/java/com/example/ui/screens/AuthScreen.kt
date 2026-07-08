@@ -41,6 +41,7 @@ fun AuthScreen(
     var confirmPasswordInput by remember { mutableStateOf("") }
     var clientType by remember { mutableStateOf("hospital") } // "hospital" or "pharmacy"
     var isProgressing by remember { mutableStateOf(false) }
+    var dbError by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -51,6 +52,29 @@ fun AuthScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // ⚠️ Error Banner
+        if (dbError != null) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3F3)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("⚠️", fontSize = 18.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = dbError!!,
+                        color = Color(0xFFDC2626),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
         // Upper Medical App Badge / Identity
         Box(
             modifier = Modifier
@@ -321,19 +345,26 @@ fun AuthScreen(
 
                             FirebaseService.registerUser(newUser, {
                                 isProgressing = false
+                                dbError = null
                                 Toast.makeText(context, "🎉 تم إنشاء الحساب بنجاح! تفضل بإكمال ملفك الشخصي.", Toast.LENGTH_LONG).show()
                                 onAuthSuccess(newUser, true) // True specifies new user (needs setup)
                             }, { errorMsg ->
                                 isProgressing = false
-                                Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                                if (errorMsg.contains("قاعدة البيانات")) {
+                                    dbError = errorMsg
+                                } else {
+                                    Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                                }
                             })
 
                         } else {
                             // Login Flow
                             isProgressing = true
+                            dbError = null
                             FirebaseService.loginUser(emailInput) { user, error ->
                                 isProgressing = false
                                 if (user != null) {
+                                    dbError = null
                                     Toast.makeText(context, "أهلاً بك مجدداً: ${user.name}", Toast.LENGTH_SHORT).show()
                                     // Check if this user has already completed setup profile in Client/Branch managers
                                     if (user.role == "client") {
@@ -350,7 +381,12 @@ fun AuthScreen(
                                         onAuthSuccess(user, false)
                                     }
                                 } else {
-                                    Toast.makeText(context, error ?: "البريد الإلكتروني غير مسجل", Toast.LENGTH_SHORT).show()
+                                    val errorMsg = error ?: "البريد الإلكتروني غير مسجل"
+                                    if (errorMsg.contains("قاعدة البيانات")) {
+                                        dbError = errorMsg
+                                    } else {
+                                        Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                             }
                         }
