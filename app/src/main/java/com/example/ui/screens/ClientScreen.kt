@@ -84,6 +84,7 @@ fun ClientScreen(
     var clientAccountState by remember { mutableStateOf(currentUser.clientAccount) }
     var clientInvoices by remember { mutableStateOf<List<Invoice>>(emptyList()) }
     var clientProfileState by remember { mutableStateOf<com.example.model.ClientProfile?>(null) }
+    var dbError by remember { mutableStateOf<String?>(null) }
 
     fun refreshProfile() {
         FirebaseService.getClientProfile(currentUser.userId) { profile ->
@@ -93,6 +94,7 @@ fun ClientScreen(
 
     // Refresh function
     fun refreshOrders() {
+        dbError = FirebaseService.lastDatabaseError
         FirebaseService.getOrders { allOrders ->
             myOrders = allOrders.filter { it.clientId == currentUser.userId }.sortedByDescending { it.createdAt }
             // Fetch offers for each order
@@ -261,6 +263,30 @@ fun ClientScreen(
                             .fillMaxSize()
                             .background(Color(0xFFF8FAFC))
                     ) {
+                        // ⚠️ Error Banner
+                        if (dbError != null) {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3F3)),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("⚠️", fontSize = 18.sp)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = dbError!!,
+                                        color = Color(0xFFDC2626),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
+
                         // Tab Switcher
                         TabRow(
                             selectedTabIndex = when (activeTab) {
