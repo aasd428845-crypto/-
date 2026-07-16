@@ -56,8 +56,10 @@ fun DirectorCatalogManagementScreen(
         isLoading = true
         FirebaseService.getPharmaProducts { products ->
             productsList = products
-            // Load promotions from the mock / Firestore system
-            promoList = FirebaseService.fallbackPromotionalOffers.toList()
+            // Load promotions from the database
+            FirebaseService.getActiveOffers("") { offers ->
+                promoList = offers
+            }
             isLoading = false
         }
     }

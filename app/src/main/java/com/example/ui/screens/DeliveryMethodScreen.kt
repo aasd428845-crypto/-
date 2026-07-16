@@ -62,8 +62,8 @@ fun DeliveryMethodScreen(
     }
 
     // Lookup Coordinates for Supplier approximate point
-    // Let's assume supplier coordinates from the DB or fallback map
-    val supplierCoords = FirebaseService.fallbackAddresses.firstOrNull { it.userId == priceOffer.supplierId }
+    // Get supplier coordinates
+    val supplierCoords = null
     val supplierLat = supplierCoords?.latitude ?: 15.3482
     val supplierLng = supplierCoords?.longitude ?: 44.2191
 
@@ -75,7 +75,7 @@ fun DeliveryMethodScreen(
                 selectedAddress!!.latitude, selectedAddress!!.longitude
             )
         } else {
-            12.5 // default fallback
+            0.0 // default
         }
     }
 

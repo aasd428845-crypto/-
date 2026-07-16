@@ -373,7 +373,7 @@ fun AuthScreen(
                                             onAuthSuccess(user, !complete)
                                         }
                                     } else if (user.role == "branch_manager") {
-                                        val managerProfile = FirebaseService.fallbackBranchManagerProfiles.find { it.userId == user.userId }
+                                        val managerProfile = null
                                         val complete = managerProfile?.profileCompleted ?: false
                                         onAuthSuccess(user, !complete)
                                     } else {

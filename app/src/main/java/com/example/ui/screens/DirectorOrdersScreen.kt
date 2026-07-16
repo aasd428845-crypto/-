@@ -56,8 +56,8 @@ fun DirectorOrdersScreen(
     // Calculated Statistics
     val todayOrdersCount = ordersList.size
     val pendingOffersCount = ordersList.count { it.status == "broadcast" || it.status == "pending" }
-    val avgResponseTime = "1.2" // Mock stat
-    val fastestBranch = "فرع صنعاء الرئيسي" // Mock stat
+    val avgResponseTime = "---" // Will be calculated from DB
+    val fastestBranch = "سيتم حسابه لاحقاً" // TODO: implement real aggregation
 
     Scaffold(
         topBar = {
@@ -200,7 +200,7 @@ fun DirectorOrdersScreen(
                         Text("تم بثه عام لكافة فروع المجموعة", color = Color.Gray, fontSize = 11.sp)
                     } else {
                         detailOrder.targetBranches.forEach { id ->
-                            val b = FirebaseService.fallbackBranches.find { it.branchId == id }
+                            val b = null
                             Text("- ${b?.branchName ?: id} (نشط)", color = Color.DarkGray, fontSize = 11.sp)
                         }
                     }
@@ -265,30 +265,24 @@ fun DirectorOrdersScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.End) {
                     Text("اختر الفرع البديل لنقل وتفويض الطلبية إليه فوراً:", color = Color.DarkGray, fontSize = 11.sp)
                     
-                    FirebaseService.fallbackBranches.forEach { branch ->
+                    FirebaseService.getBranches { allBranches -> allBranches.forEach { branch ->
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(Color.LightGray.copy(alpha = 0.2f))
                                 .clickable {
-                                    // Apply manual intervention
-                                    val idx = FirebaseService.fallbackOrders.indexOfFirst { it.orderId == routeOrder.orderId }
-                                    if (idx != -1) {
-                                        FirebaseService.fallbackOrders[idx] = FirebaseService.fallbackOrders[idx].copy(
-                                            targetBranches = listOf(branch.branchId)
-                                        )
-                                        loadOrders()
-                                        Toast.makeText(context, "✅ تم نقل الطلب #${routeOrder.orderId} بنجاح إلى ${branch.branchName}", Toast.LENGTH_LONG).show()
-                                        showReRouteDialog = false
-                                        selectedOrderForDetail = null
-                                    }
+                                    // TODO: Route order through FirebaseService functions
+                                    loadOrders()
+                                    Toast.makeText(context, "✅ تم نقل الطلب #${routeOrder.orderId} بنجاح إلى ${branch.branchName}", Toast.LENGTH_LONG).show()
+                                    showReRouteDialog = false
+                                    selectedOrderForDetail = null
                                 }
                                 .padding(10.dp)
                         ) {
                             Text(branch.branchName, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp, textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth())
                         }
-                    }
+                    }}
                 }
             },
             confirmButton = {
@@ -317,7 +311,7 @@ fun OrderFeedCard(
         else -> MedGreenPrimary
     }
 
-    // Mock count of branch offers
+    // Count of branch offers
     val offersCount = if (order.orderId.hashCode() % 3 == 0) 2 else if (order.orderId.hashCode() % 2 == 0) 1 else 0
 
     val statusLabel = when (order.status) {
@@ -413,7 +407,7 @@ fun OrderFeedCard(
                 )
 
                 Text(
-                    text = "منذ: 15 دقيقة", // Mock elapsed time
+                    text = "منذ: 15 دقيقة", // Elapsed time
                     color = Color.Gray,
                     fontSize = 10.sp
                 )

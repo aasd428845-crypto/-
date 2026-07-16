@@ -39,9 +39,9 @@ fun BranchManagerSetupScreen(
     var currentStep by remember { mutableStateOf(1) } // 1, 2, 3
 
     // Look up pre-assigned branch info for this manager
-    val managerUser = FirebaseService.fallbackUsers.find { it.userId == userId }
+    val managerUser = null
     val assignedBranchId = managerUser?.branchId ?: "branch_sanaa"
-    val assignedBranch = FirebaseService.fallbackBranches.find { it.branchId == assignedBranchId }
+    val assignedBranch = null
 
     // Step 1 States: Manager Details
     var fullName by remember { mutableStateOf(managerUser?.name ?: "") }
@@ -153,7 +153,7 @@ fun BranchManagerSetupScreen(
                                         isDefault = addedAccountsList.isEmpty()
                                     )
                                     addedAccountsList.add(newAcc)
-                                    // Save mock in database fallback too
+                                    // Save to database
                                     FirebaseService.saveBankAccount(newAcc, {}, {})
                                     
                                     // Clear fields

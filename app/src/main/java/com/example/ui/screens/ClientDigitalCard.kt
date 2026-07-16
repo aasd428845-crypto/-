@@ -48,20 +48,7 @@ fun ClientDigitalCard(
         }
     }
 
-    // Default template profile in case loading
-    val activeProfile = clientProfile ?: ClientProfile(
-        clientId = "YM-CL-10254",
-        userId = userId,
-        institutionName = "مستشفى الثورة العام النموذجي",
-        clientType = "hospital",
-        responsiblePerson = "أحمد محمد الحيمي",
-        phone = "+967 771234567",
-        governorate = "صنعاء",
-        city = "صنعاء",
-        assignedBranchName = "فرع صنعاء الرئيسي",
-        isVerified = true,
-        joinedAt = System.currentTimeMillis() - (86400000L * 15) // 15 days ago
-    )
+    val activeProfile = clientProfile
 
     // Pulse animation for QR/Badge highlight
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -151,7 +138,7 @@ fun ClientDigitalCard(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(
-                                    if (activeProfile.isVerified) MedGreenPrimary.copy(alpha = 0.2f)
+                                    if (activeProfile?.isVerified == true) MedGreenPrimary.copy(alpha = 0.2f)
                                     else MedRedPrimary.copy(alpha = 0.2f)
                                 )
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
@@ -164,12 +151,12 @@ fun ClientDigitalCard(
                                     modifier = Modifier
                                         .size(6.dp)
                                         .clip(CircleShape)
-                                        .background(if (activeProfile.isVerified) MedGreenPrimary else MedRedPrimary)
+                                        .background(if (activeProfile?.isVerified == true) MedGreenPrimary else MedRedPrimary)
                                         .graphicsLayer(alpha = alphaPulse)
                                 )
                                 Text(
-                                    text = if (activeProfile.isVerified) "عضوية معتمدة 🛡️" else "قيد المراجعة ⏳",
-                                    color = if (activeProfile.isVerified) MedGreenPrimary else MedRedPrimary,
+                                    text = if (activeProfile?.isVerified == true) "عضوية معتمدة 🛡️" else "قيد المراجعة ⏳",
+                                    color = if (activeProfile?.isVerified == true) MedGreenPrimary else MedRedPrimary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp
                                 )
@@ -245,7 +232,7 @@ fun ClientDigitalCard(
                         // Right - Customer Info
                         Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                             Text(
-                                text = activeProfile.institutionName,
+                                text = activeProfile?.institutionName ?: "---",
                                 color = Color.White,
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 15.sp,
@@ -253,13 +240,13 @@ fun ClientDigitalCard(
                                 textAlign = TextAlign.Right
                             )
                             Text(
-                                text = "نوع العضوية: ${if (activeProfile.clientType == "hospital") "مستشفى طبي معتمد" else "صيدلية / مستودع دوائي"}",
+                                text = "نوع العضوية: ${if (activeProfile?.clientType == "hospital") "مستشفى طبي معتمد" else "صيدلية / مستودع دوائي"}",
                                 color = Color.LightGray,
                                 fontSize = 11.sp,
                                 textAlign = TextAlign.Right
                             )
                             Text(
-                                text = "رقم العضوية: #${activeProfile.clientId}",
+                                text = "رقم العضوية: #${activeProfile?.clientId ?: "---"}",
                                 color = MedGreenPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
@@ -277,7 +264,7 @@ fun ClientDigitalCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val formattedDate = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(Date(activeProfile.joinedAt))
+                        val formattedDate = activeProfile?.joinedAt?.let { SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(Date(it)) } ?: "---"
                         Text(
                             text = "انضم في: $formattedDate",
                             color = Color.Gray,
@@ -285,7 +272,7 @@ fun ClientDigitalCard(
                         )
 
                         Text(
-                            text = "الفرع المغذي: ${activeProfile.assignedBranchName}",
+                            text = "الفرع المغذي: ${activeProfile?.assignedBranchName ?: "---"}",
                             color = Color.LightGray,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold

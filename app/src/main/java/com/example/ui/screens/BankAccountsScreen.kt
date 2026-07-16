@@ -48,17 +48,6 @@ fun BankAccountsScreen(
     var walletNumber by remember { mutableStateOf("") }
     var isDefault by remember { mutableStateOf(false) }
 
-    val presetBanks = listOf(
-        "البنك الكريمي للتمويل الأصغر الإسلامي",
-        "بنك اليمن والخليج",
-        "البنك الأهلي اليمني",
-        "بنك المأمون"
-    )
-    val presetWallets = listOf(
-        "محفظة كاش - يمن موبايل",
-        "محفظة MTN كاش"
-    )
-
     fun loadAccounts() {
         isLoading = true
         FirebaseService.getBankAccounts(currentUser.userId) { list ->
@@ -122,7 +111,7 @@ fun BankAccountsScreen(
                 Button(
                     onClick = {
                         dialogType = "bank"
-                        bankName = presetBanks[0]
+                        bankName = ""
                         accountNumber = ""
                         accountHolderName = currentUser.orgName
                         walletNumber = ""
@@ -141,7 +130,7 @@ fun BankAccountsScreen(
                 Button(
                     onClick = {
                         dialogType = "mfs"
-                        bankName = presetWallets[0]
+                        bankName = ""
                         accountNumber = ""
                         accountHolderName = currentUser.orgName
                         walletNumber = ""
@@ -309,7 +298,7 @@ fun BankAccountsScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                presetBanks.take(2).forEach { bank ->
+                                emptyList<String>().forEach { bank ->
                                     Box(
                                         modifier = Modifier
                                             .border(1.dp, if (inputBankName == bank) MedBluePrimary else Color.LightGray, RoundedCornerShape(10.dp))
@@ -343,7 +332,7 @@ fun BankAccountsScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                presetWallets.forEach { wall ->
+                                emptyList<String>().forEach { wall ->
                                     Box(
                                         modifier = Modifier
                                             .border(1.dp, if (inputBankName == wall) MedGreenPrimary else Color.LightGray, RoundedCornerShape(10.dp))

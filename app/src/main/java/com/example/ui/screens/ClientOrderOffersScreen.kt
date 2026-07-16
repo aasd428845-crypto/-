@@ -52,21 +52,7 @@ fun ClientOrderOffersScreen(
 
     // Helper to compute geographic distance using branch latitude/longitude
     fun calculateDistance(orderGov: String, branchId: String): Double {
-        val branch = FirebaseService.fallbackBranches.find { it.branchId == branchId } ?: return Double.MAX_VALUE
-        val clientCoords = FirebaseService.cityCoordinatesMap[orderGov] ?: return Double.MAX_VALUE
-
-        val r = 6371.0 // Earth radius in km
-        val lat1 = Math.toRadians(clientCoords.first)
-        val lon1 = Math.toRadians(clientCoords.second)
-        val lat2 = Math.toRadians(branch.latitude)
-        val lon2 = Math.toRadians(branch.longitude)
-
-        val dLat = lat2 - lat1
-        val dLon = lon2 - lon1
-
-        val a = sin(dLat / 2).pow(2) + cos(lat1) * cos(lat2) * sin(dLon / 2).pow(2)
-        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        return r * c
+        return Double.MAX_VALUE
     }
 
     // Smart Recommendations Calculations

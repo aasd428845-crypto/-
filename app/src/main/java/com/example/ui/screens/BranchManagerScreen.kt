@@ -94,10 +94,7 @@ fun BranchManagerScreen(
         }
 
         // 3. Get list of pharmacy/hospital clients to monitor credit limits
-        FirebaseService.getSuppliers { _ ->
-            // Hack/helper: filter the fallbackUsers in FirebaseService for client role
-            clientUsersList = FirebaseService.fallbackUsers.filter { it.role == "client" }
-        }
+        clientUsersList = emptyList()
 
         // 4. Get active offers
         FirebaseService.getAllBranchOffers { allOffers ->
@@ -988,61 +985,7 @@ fun OrderAllocationScreen(
         if (originalLines.isNotEmpty()) {
             originalLines
         } else {
-            // High-quality clinical data fallback if order has no detailed lines (for legacy tests)
-            listOf(
-                OrderLine(
-                    lineId = "line_mock_1",
-                    product = PharmaProduct(
-                        productId = "med_amox",
-                        sku = "SKU-AMOX-500",
-                        ndcCode = "NDC-0047-1120-10",
-                        commercialName = "أموكسيسيلين 500 ملج (Amoxicillin)",
-                        scientificName = "Amoxicillin Trihydrate",
-                        dosageForm = DosageForm.CAPSULE,
-                        strength = "500mg",
-                        price = 2400.0
-                    ),
-                    requestedQty = 10,
-                    shippedQty = 0,
-                    unitPrice = 2400.0,
-                    totalPrice = 24000.0
-                ),
-                OrderLine(
-                    lineId = "line_mock_2",
-                    product = PharmaProduct(
-                        productId = "med_panadol",
-                        sku = "SKU-PANA-EXT",
-                        ndcCode = "NDC-0102-4512-50",
-                        commercialName = "بنادول اكسترا (Panadol Extra)",
-                        scientificName = "Paracetamol + Caffeine",
-                        dosageForm = DosageForm.TABLET,
-                        strength = "500mg/65mg",
-                        price = 1500.0
-                    ),
-                    requestedQty = 25,
-                    shippedQty = 0,
-                    unitPrice = 1500.0,
-                    totalPrice = 37500.0
-                ),
-                OrderLine(
-                    lineId = "line_mock_3",
-                    product = PharmaProduct(
-                        productId = "med_insulin",
-                        sku = "SKU-INS-LAN",
-                        ndcCode = "NDC-0088-2219-05",
-                        commercialName = "أنسولين لانتوس مبرد (Lantus)",
-                        scientificName = "Insulin Glargine",
-                        dosageForm = DosageForm.INJECTION,
-                        strength = "100 U/mL",
-                        isColdChain = true,
-                        price = 9800.0
-                    ),
-                    requestedQty = 5,
-                    shippedQty = 0,
-                    unitPrice = 9800.0,
-                    totalPrice = 49000.0
-                )
-            )
+            emptyList()
         }
     }
 

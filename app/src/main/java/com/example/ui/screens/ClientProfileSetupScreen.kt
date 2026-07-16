@@ -49,15 +49,8 @@ fun ClientProfileSetupScreen(
     var isLicenseUploaded by remember { mutableStateOf(false) }
 
     // Step 2 States: Location Info
-    val governorates = listOf("صنعاء", "عدن", "تعز", "الحديدة", "حضرموت", "إب")
-    val citiesMap = mapOf(
-        "صنعاء" to listOf("الصافية", "السبعين", "شعوب", "الحصبة", "الوحدة"),
-        "عدن" to listOf("خور مكسر", "كريتر", "المنصورة", "الشيخ عثمان", "المعلا"),
-        "تعز" to listOf("الحوبان", "القاهرة", "المظفر", "صالة"),
-        "الحديدة" to listOf("الميناء", "الحوك", "الحالي"),
-        "حضرموت" to listOf("المكلا", "الشحر", "سيئون", "تريم"),
-        "إب" to listOf("الظهار", "المشنة", "جبلة", "يريم")
-    )
+    val governorates = emptyList<String>()
+    val citiesMap = emptyMap<String, List<String>>()
 
     var selectedGovernorate by remember { mutableStateOf("صنعاء") }
     var selectedCity by remember { mutableStateOf("الصافية") }
@@ -65,7 +58,7 @@ fun ClientProfileSetupScreen(
     var landmark by remember { mutableStateOf("") }
     var fullAddressDesc by remember { mutableStateOf("") }
 
-    // Mock Map Location (starts at Sanaa center)
+    // Map Location
     var pinLat by remember { mutableStateOf(15.3482) }
     var pinLng by remember { mutableStateOf(44.2191) }
 
@@ -80,19 +73,22 @@ fun ClientProfileSetupScreen(
 
     // Function to calculate distance dynamically
     fun updateNearestBranch(lat: Double, lng: Double) {
-        var closestBranch = FirebaseService.fallbackBranches.first()
-        var minDistance = Double.MAX_VALUE
+        FirebaseService.getBranches { branches ->
+            if (branches.isEmpty()) return@getBranches
+            var closestBranch = branches.first()
+            var minDistance = Double.MAX_VALUE
 
-        FirebaseService.fallbackBranches.forEach { branch ->
-            val dist = FirebaseService.calculateDistanceKm(lat, lng, branch.latitude, branch.longitude)
-            if (dist < minDistance) {
-                minDistance = dist
-                closestBranch = branch
+            branches.forEach { branch ->
+                val dist = FirebaseService.calculateDistanceKm(lat, lng, branch.latitude, branch.longitude)
+                if (dist < minDistance) {
+                    minDistance = dist
+                    closestBranch = branch
+                }
             }
+            nearestBranchName = closestBranch.branchName
+            nearestBranchId = closestBranch.branchId
+            nearestBranchDistance = minDistance
         }
-        nearestBranchName = closestBranch.branchName
-        nearestBranchId = closestBranch.branchId
-        nearestBranchDistance = minDistance
     }
 
     // Trigger update on governorate/coordinates change
@@ -597,7 +593,7 @@ fun Step1Layout(
         }
 
         item {
-            // Upload License Document Preview Mock
+            // Upload License Document Preview
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -820,7 +816,7 @@ fun Step2Layout(
             )
         }
 
-        // MOCK GOOGLE MAPS INTERACTIVE CARD
+        // GOOGLE MAPS INTERACTIVE CARD
         item {
             Card(
                 shape = RoundedCornerShape(12.dp),
@@ -924,7 +920,7 @@ fun Step3Layout(
     paymentAccount: String,
     onAccountChange: (String) -> Unit
 ) {
-    val paymentOptions = listOf("تحويل بنكي", "كاش", "MTN كاش", "يمن موبايل كاش")
+    val paymentOptions = emptyList<String>()
 
     Column(
         modifier = Modifier.fillMaxWidth(),

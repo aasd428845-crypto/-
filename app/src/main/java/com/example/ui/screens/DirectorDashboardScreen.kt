@@ -217,96 +217,86 @@ fun DirectorDashboardScreen(
 
                 // 1. KPI Grid Card Grid (LazyVerticalGrid with 2 columns)
                 item {
-                    val kpis = listOf(
-                        KpiItem(
-                            title = "إجمالي المبيعات",
-                            value = "1,250,000 ريال",
-                            icon = Icons.Default.TrendingUp,
-                            color = MedGreenPrimary,
-                            bgColor = Color(0xFFECFDF5),
-                            testTag = "kpi_total_sales"
-                        ),
-                        KpiItem(
-                            title = "الذمم المدينة",
-                            value = "340,000 ريال",
-                            icon = Icons.Default.AccountBalanceWallet,
-                            color = Color(0xFFF97316),
-                            bgColor = Color(0xFFFFF7ED),
-                            testTag = "kpi_receivables"
-                        ),
-                        KpiItem(
-                            title = "الطلبات النشطة",
-                            value = "45",
-                            icon = Icons.Default.ShoppingCart,
-                            color = MedBluePrimary,
-                            bgColor = Color(0xFFEFF6FF),
-                            testTag = "kpi_active_orders"
-                        ),
-                        KpiItem(
-                            title = "فروع نشطة",
-                            value = "12",
-                            icon = Icons.Default.Business,
-                            color = Color(0xFF8B5CF6),
-                            bgColor = Color(0xFFF5F3FF),
-                            testTag = "kpi_active_branches"
-                        )
-                    )
+                    val kpis = emptyList<KpiItem>()
 
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(260.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        userScrollEnabled = false
-                    ) {
-                        items(kpis.size) { index ->
-                            val kpi = kpis[index]
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .testTag(kpi.testTag),
-                                shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, kpi.color.copy(alpha = 0.15f))
+                    if (kpis.isEmpty()) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Column(
+                                Text(
+                                    text = "جاري تحميل المؤشرات...",
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF94A3B8),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(260.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            userScrollEnabled = false
+                        ) {
+                            items(kpis.size) { index ->
+                                val kpi = kpis[index]
+                                Card(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .background(kpi.bgColor.copy(alpha = 0.3f))
-                                        .padding(14.dp),
-                                    verticalArrangement = Arrangement.SpaceBetween
+                                        .testTag(kpi.testTag),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, kpi.color.copy(alpha = 0.15f))
                                 ) {
-                                    Box(
+                                    Column(
                                         modifier = Modifier
-                                            .size(36.dp)
-                                            .background(kpi.bgColor, shape = RoundedCornerShape(10.dp)),
-                                        contentAlignment = Alignment.Center
+                                            .fillMaxSize()
+                                            .background(kpi.bgColor.copy(alpha = 0.3f))
+                                            .padding(14.dp),
+                                        verticalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Icon(
-                                            imageVector = kpi.icon,
-                                            contentDescription = null,
-                                            tint = kpi.color,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Column {
-                                        Text(
-                                            text = kpi.title,
-                                            fontSize = 11.sp,
-                                            color = Color(0xFF64748B),
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                        Text(
-                                            text = kpi.value,
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.ExtraBold,
-                                            color = kpi.color,
-                                            modifier = Modifier.padding(top = 2.dp)
-                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .background(kpi.bgColor, shape = RoundedCornerShape(10.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = kpi.icon,
+                                                contentDescription = null,
+                                                tint = kpi.color,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Column {
+                                            Text(
+                                                text = kpi.title,
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF64748B),
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                text = kpi.value,
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = kpi.color,
+                                                modifier = Modifier.padding(top = 2.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -357,34 +347,42 @@ fun DirectorDashboardScreen(
                                 )
                             }
 
-                            val criticalMeds = listOf(
-                                "بانادول إكسترا (Panadol Extra)",
-                                "أوميبرازول 20 ملج (Omeprazole 20mg)",
-                                "أوجمنتين 1 جم (Augmentin 1g)"
-                            )
+                            val criticalMeds = emptyList<String>()
 
-                            criticalMeds.forEach { medName ->
-                                Row(
+                            if (criticalMeds.isEmpty()) {
+                                Text(
+                                    text = "لا توجد تنبيهات مخزون حرج حالياً",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF94A3B8),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(Color(0xFFFEF2F2), RoundedCornerShape(8.dp))
-                                        .border(1.dp, Color(0xFFFEE2E2), RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = medName,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF1E293B)
-                                    )
-                                    Text(
-                                        text = "الكمية المتبقية: 5 كراتين",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MedRedPrimary
-                                    )
+                                        .padding(vertical = 8.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                            } else {
+                                criticalMeds.forEach { medName ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(Color(0xFFFEF2F2), RoundedCornerShape(8.dp))
+                                            .border(1.dp, Color(0xFFFEE2E2), RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = medName,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF1E293B)
+                                        )
+                                        Text(
+                                            text = "الكمية المتبقية: 5 كراتين",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MedRedPrimary
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -423,33 +421,42 @@ fun DirectorDashboardScreen(
                                 )
                             }
 
-                            val defaultingPharmacies = listOf(
-                                "صيدلية الشفاء الحديثة",
-                                "صيدلية الأمل النموذجية"
-                            )
+                            val defaultingPharmacies = emptyList<String>()
 
-                            defaultingPharmacies.forEach { pharmacyName ->
-                                Row(
+                            if (defaultingPharmacies.isEmpty()) {
+                                Text(
+                                    text = "لا يوجد عملاء متعثرون حالياً",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF94A3B8),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(Color(0xFFFFF7ED), RoundedCornerShape(8.dp))
-                                        .border(1.dp, Color(0xFFFFEDD5), RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = pharmacyName,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF1E293B)
-                                    )
-                                    Text(
-                                        text = "تجاوز السقف الائتماني بنسبة 95%",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFEA580C)
-                                    )
+                                        .padding(vertical = 8.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                            } else {
+                                defaultingPharmacies.forEach { pharmacyName ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(Color(0xFFFFF7ED), RoundedCornerShape(8.dp))
+                                            .border(1.dp, Color(0xFFFFEDD5), RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = pharmacyName,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF1E293B)
+                                        )
+                                        Text(
+                                            text = "تجاوز السقف الائتماني بنسبة 95%",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFEA580C)
+                                        )
+                                    }
                                 }
                             }
                         }

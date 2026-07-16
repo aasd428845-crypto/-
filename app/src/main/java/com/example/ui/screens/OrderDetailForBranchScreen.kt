@@ -119,7 +119,7 @@ fun OrderDetailForBranchScreen(
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text("رقم الهاتف للتواصل:", fontSize = 10.sp, color = Color.Gray)
-                                val dummyPhone = "77" + order.clientId.hashCode().coerceAtLeast(0).toString().take(7).padEnd(7, '0')
+                                val dummyPhone = "غير متاح"
                                 Text(
                                     text = maskPhone(dummyPhone, isOfferAccepted),
                                     fontWeight = FontWeight.Bold,

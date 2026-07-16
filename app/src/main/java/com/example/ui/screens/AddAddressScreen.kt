@@ -62,7 +62,7 @@ fun AddAddressScreen(
     var isManualMapSelection by remember { mutableStateOf(false) }
 
     // List of governorates in Yemen
-    val governorates = listOf("صنعاء", "عدن", "تعز", "الحديدة", "حضرموت", "إب", "ذمار", "مأرب")
+    val governorates = emptyList<String>()
     var govExpanded by remember { mutableStateOf(false) }
 
     Scaffold(

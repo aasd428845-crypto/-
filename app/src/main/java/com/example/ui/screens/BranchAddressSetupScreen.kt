@@ -48,11 +48,11 @@ fun BranchAddressSetupScreen(
 
     // Form inputs state
     var label by remember { mutableStateOf(currentUser.branchName.ifEmpty() { "الفرع الرئيسي" }) }
-    var orgName by remember { mutableStateOf(currentUser.orgName.ifEmpty() { "مجموعة الشفاء للأدوية" }) }
-    var phone by remember { mutableStateOf(currentUser.phone.ifEmpty() { "771111112" }) }
+    var orgName by remember { mutableStateOf(currentUser.orgName.ifEmpty() { "" }) }
+    var phone by remember { mutableStateOf(currentUser.phone.ifEmpty() { "" }) }
     var landmark by remember { mutableStateOf("") }
     
-    var selectedGovernorate by remember { mutableStateOf(currentUser.governorate.ifEmpty() { "صنعاء" }) }
+    var selectedGovernorate by remember { mutableStateOf(currentUser.governorate.ifEmpty() { "" }) }
     var selectedDistrict by remember { mutableStateOf("") }
     var selectedNeighborhood by remember { mutableStateOf("") }
     var detailedDescription by remember { mutableStateOf("") }
@@ -63,53 +63,12 @@ fun BranchAddressSetupScreen(
     var neighExpanded by remember { mutableStateOf(false) }
 
     // Coordinates state
-    var latitude by remember { mutableStateOf(15.3482) }
-    var longitude by remember { mutableStateOf(44.2191) }
+    var latitude by remember { mutableStateOf(0.0) }
+    var longitude by remember { mutableStateOf(0.0) }
     var isManualMapSelection by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
 
-    // Yemen Governorates, Districts, and Neighborhoods hierarchy
-    val hierarchy = remember {
-        mapOf(
-            "صنعاء" to mapOf(
-                "السبعين" to listOf("حي الأصبحي", "حي حدة", "حي بيت بوس", "حي الخمسين"),
-                "الصافية" to listOf("حي حارة الصافية", "حي البليلي", "حي التحرير الجنوبي"),
-                "شعوب" to listOf("حي الروضة", "حي الحصبة الشمالية", "حي المطار"),
-                "الثورة" to listOf("حي الحصبة", "حي الجراف", "حي سواد حنش"),
-                "الوحدة" to listOf("حي جولة ريحة", "حي عصر", "حي بغداد")
-            ),
-            "عدن" to mapOf(
-                "خور مكسر" to listOf("حي العروض", "حي الرشيد", "حي السلام", "حي أكتوبر"),
-                "كريتر" to listOf("حي قلعة صيرة", "حي العيدروس", "حي السبيل"),
-                "المنصورة" to listOf("حي التسعين", "حي الحجاز", "حي الدرين", "حي كابوتا"),
-                "المعلا" to listOf("حي الدكة", "حي الشيخ إسحاق", "حي ردفان")
-            ),
-            "تعز" to mapOf(
-                "الحوبان" to listOf("حي المدينة الصناعية", "حي الجند", "حي مفرق ماوية"),
-                "القاهرة" to listOf("حي الدحي", "حي النسيرية", "حي المسبح"),
-                "المظفر" to listOf("حي باب موسى", "حي النسيرية الغربي", "حي بئر باشا")
-            ),
-            "الحديدة" to mapOf(
-                "الحالي" to listOf("حي غليل", "حي الربصة", "حي الشهداء"),
-                "الميناء" to listOf("حي الكورنيش", "حي الشام", "حي اليمن"),
-                "الحوك" to listOf("حي الربصة الغربي", "حي الهنود")
-            ),
-            "حضرموت" to mapOf(
-                "المكلا" to listOf("حي الشرج", "حي الديس", "حي فوه", "حي روكب"),
-                "سيئون" to listOf("حي السحيل", "حي القرن", "حي مريمة")
-            ),
-            "إب" to mapOf(
-                "الظهار" to listOf("حي المعاين", "حي أبلان", "حي الروضة"),
-                "المشنة" to listOf("حي جرافة", "حي الوعرة", "حي القديمة")
-            ),
-            "ذمار" to mapOf(
-                "ذمار" to listOf("حي جامعة ذمار", "حي رداع", "حي الدرب")
-            ),
-            "مأرب" to mapOf(
-                "مأرب" to listOf("حي الروضة", "حي المطار", "حي الشركة")
-            )
-        )
-    }
+    val hierarchy = remember { emptyMap<String, Map<String, List<String>>>() }
 
     // Get districts list based on governorate
     val districts = hierarchy[selectedGovernorate]?.keys?.toList() ?: emptyList()

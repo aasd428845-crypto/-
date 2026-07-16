@@ -49,7 +49,7 @@ fun WarehouseInventoryScreen(
     var adjustmentQtyStr by remember { mutableStateOf("") }
     var newExpiryDateStr by remember { mutableStateOf("") }
 
-    // Load inventory from Firebase Mock
+    // Load inventory from database
     fun loadInventory() {
         isLoading = true
         FirebaseService.getWarehouseInventory(currentUser.branchId ?: "branch_sanaa") { items ->

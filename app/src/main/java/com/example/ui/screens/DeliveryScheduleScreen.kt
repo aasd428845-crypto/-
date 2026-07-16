@@ -46,8 +46,8 @@ fun DeliveryScheduleScreen(
     var isLoading by remember { mutableStateOf(false) }
 
     // Slots
-    var supplierSlots by remember { mutableStateOf(listOf("الأربعاء 10 يونيو - 10:00 صباحاً", "الخميس 11 يونيو - 2:30 مساءً")) }
-    var hospitalSlots by remember { mutableStateOf(listOf("الأربعاء 10 يونيو - 12:00 ظهراً", "الجمعة 12 يونيو - 9:00 صباحاً")) }
+    var supplierSlots by remember { mutableStateOf(emptyList<String>()) }
+    var hospitalSlots by remember { mutableStateOf(emptyList<String>()) }
 
     var selectedSupplierSlot by remember { mutableStateOf<String?>(null) }
     var selectedHospitalSlot by remember { mutableStateOf<String?>(null) }

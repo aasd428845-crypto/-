@@ -58,12 +58,7 @@ fun SendPriceOfferScreen(
     var attachmentPath by remember { mutableStateOf("") }
     var isSubmitting by remember { mutableStateOf(false) }
 
-    val paymentTermsOptions = listOf(
-        "فوري عند الاستلام",
-        "آجل (سداد خلال 30 يوم)",
-        "أقساط شهرية ميسرة",
-        "قابل للتفاوض والمناقشة"
-    )
+    val paymentTermsOptions = emptyList<String>()
     var showTermsDropdown by remember { mutableStateOf(false) }
 
     Scaffold(
