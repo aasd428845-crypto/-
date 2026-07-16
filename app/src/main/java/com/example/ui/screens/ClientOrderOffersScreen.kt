@@ -450,14 +450,7 @@ fun ClientOrderOffersScreen(
                             Toast.makeText(context, "الرجاء كتابة رسالة التفاوض", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
-                        val idx = FirebaseService.fallbackBranchOffers.indexOfFirst { it.offerId == offer.offerId }
-                        if (idx != -1) {
-                            val currentNotes = FirebaseService.fallbackBranchOffers[idx].notes
-                            val updatedNotes = if (currentNotes.isEmpty()) "💬 تفاوض العميل: $negotiationMessage" else "$currentNotes\n💬 تفاوض العميل: $negotiationMessage"
-                            FirebaseService.fallbackBranchOffers[idx] = FirebaseService.fallbackBranchOffers[idx].copy(
-                                status = "negotiating",
-                                notes = updatedNotes
-                            )
+                        FirebaseService.rejectBranchOffer(offer.offerId, negotiationMessage) { _ ->
                             Toast.makeText(context, "🚀 تم إرسال رسالة التفاوض لفرع ${offer.branchName} بنجاح!", Toast.LENGTH_LONG).show()
                             showNegotiationDialog = false
                             negotiationMessage = ""

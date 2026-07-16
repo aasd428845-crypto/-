@@ -373,8 +373,7 @@ fun AuthScreen(
                                             onAuthSuccess(user, !complete)
                                         }
                                     } else if (user.role == "branch_manager") {
-                                        val managerProfile = null
-                                        val complete = managerProfile?.profileCompleted ?: false
+                                        val complete = false
                                         onAuthSuccess(user, !complete)
                                     } else {
                                         // Directors go directly

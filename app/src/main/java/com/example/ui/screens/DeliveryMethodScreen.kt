@@ -61,11 +61,9 @@ fun DeliveryMethodScreen(
         loadAddresses()
     }
 
-    // Lookup Coordinates for Supplier approximate point
-    // Get supplier coordinates
-    val supplierCoords = null
-    val supplierLat = supplierCoords?.latitude ?: 15.3482
-    val supplierLng = supplierCoords?.longitude ?: 44.2191
+    // Supplier coordinates - fetched from DB in the LaunchedEffect
+    var supplierLat by remember { mutableStateOf(15.3482) }
+    var supplierLng by remember { mutableStateOf(44.2191) }
 
     // Calculations based on chosen address
     val distance = remember(selectedAddress) {

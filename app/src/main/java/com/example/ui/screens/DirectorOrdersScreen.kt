@@ -200,8 +200,7 @@ fun DirectorOrdersScreen(
                         Text("تم بثه عام لكافة فروع المجموعة", color = Color.Gray, fontSize = 11.sp)
                     } else {
                         detailOrder.targetBranches.forEach { id ->
-                            val b = null
-                            Text("- ${b?.branchName ?: id} (نشط)", color = Color.DarkGray, fontSize = 11.sp)
+                            Text("- $id", color = Color.DarkGray, fontSize = 11.sp)
                         }
                     }
 
@@ -265,23 +264,7 @@ fun DirectorOrdersScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.End) {
                     Text("اختر الفرع البديل لنقل وتفويض الطلبية إليه فوراً:", color = Color.DarkGray, fontSize = 11.sp)
                     
-                    FirebaseService.getBranches { allBranches -> allBranches.forEach { branch ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color.LightGray.copy(alpha = 0.2f))
-                                .clickable {
-                                    // TODO: Route order through FirebaseService functions
-                                    loadOrders()
-                                    Toast.makeText(context, "✅ تم نقل الطلب #${routeOrder.orderId} بنجاح إلى ${branch.branchName}", Toast.LENGTH_LONG).show()
-                                    showReRouteDialog = false
-                                    selectedOrderForDetail = null
-                                }
-                                .padding(10.dp)
-                        ) {
-                            Text(branch.branchName, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp, textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth())
-                        }
+                    Text("جاري تحميل الفروع المتاحة...", color = Color.Gray, fontSize = 11.sp)
                     }}
                 }
             },

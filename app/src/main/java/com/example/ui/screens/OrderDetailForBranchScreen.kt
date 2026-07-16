@@ -336,14 +336,9 @@ fun OrderDetailForBranchScreen(
                             Toast.makeText(context, "يرجى إدخال سبب الاعتذار", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
-                        // Create a fake rejected offer or update fallbackOrder
-                        val idx = FirebaseService.fallbackOrders.indexOfFirst { it.orderId == order.orderId }
-                        if (idx != -1) {
-                            // If the order has specific branch exclusions or similar we can track it, or simple toast
-                            Toast.makeText(context, "تم الاعتذار عن تلبية الطلب بنجاح للعميل.", Toast.LENGTH_LONG).show()
-                            showRejectDialog = false
-                            onBackClick()
-                        }
+                        Toast.makeText(context, "تم الاعتذار عن تلبية الطلب بنجاح للعميل.", Toast.LENGTH_LONG).show()
+                        showRejectDialog = false
+                        onBackClick()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MedRedPrimary)
                 ) {

@@ -38,20 +38,15 @@ fun BranchManagerSetupScreen(
     val context = LocalContext.current
     var currentStep by remember { mutableStateOf(1) } // 1, 2, 3
 
-    // Look up pre-assigned branch info for this manager
-    val managerUser = null
-    val assignedBranchId = managerUser?.branchId ?: "branch_sanaa"
-    val assignedBranch = null
-
     // Step 1 States: Manager Details
-    var fullName by remember { mutableStateOf(managerUser?.name ?: "") }
-    var phone by remember { mutableStateOf(managerUser?.phone ?: "") }
+    var fullName by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var isIdUploaded by remember { mutableStateOf(false) }
 
     // Step 2 States: Precise Warehouse Location (Prefilled from branch data)
-    var warehouseLat by remember { mutableStateOf(assignedBranch?.latitude ?: 15.3482) }
-    var warehouseLng by remember { mutableStateOf(assignedBranch?.longitude ?: 44.2191) }
-    var warehouseAddressDesc by remember { mutableStateOf(assignedBranch?.address ?: "") }
+    var warehouseLat by remember { mutableStateOf(15.3482) }
+    var warehouseLng by remember { mutableStateOf(44.2191) }
+    var warehouseAddressDesc by remember { mutableStateOf("") }
 
     // Step 3 States: Bank Accounts Setup
     var bankName by remember { mutableStateOf("") }
@@ -112,9 +107,9 @@ fun BranchManagerSetupScreen(
                     }
                     2 -> {
                         ManagerStep2(
-                            branchName = assignedBranch?.branchName ?: "فرع صنعاء الرئيسي",
-                            governorate = assignedBranch?.governorate ?: "صنعاء",
-                            city = assignedBranch?.city ?: "صنعاء",
+                            branchName = "---",
+                            governorate = "---",
+                            city = "---",
                             warehouseAddressDesc = warehouseAddressDesc,
                             onAddressChange = { warehouseAddressDesc = it },
                             lat = warehouseLat,
