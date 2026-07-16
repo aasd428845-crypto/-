@@ -263,9 +263,7 @@ fun DirectorOrdersScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.End) {
                     Text("اختر الفرع البديل لنقل وتفويض الطلبية إليه فوراً:", color = Color.DarkGray, fontSize = 11.sp)
-                    
                     Text("جاري تحميل الفروع المتاحة...", color = Color.Gray, fontSize = 11.sp)
-                    }}
                 }
             },
             confirmButton = {
