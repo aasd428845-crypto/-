@@ -293,7 +293,7 @@ fun ClientScreen(
                                 "new_order" -> 0
                                 "my_orders" -> 1
                                 "financial" -> 2
-                                else -> 3
+                                "account" -> 3
                             },
                             containerColor = Color.White,
                             contentColor = MedBluePrimary
@@ -621,77 +621,26 @@ fun ClientScreen(
 
                                                     Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f).padding(end = 16.dp)) {
                                                         Text(
-                                                            "بث طلب شراء دوائي ذكي (5 خطوات) ✍️",
+                                                            "طلب خاص لصنف غير متوفر بالكتالوج (نادر الاستخدام)",
                                                             color = MedBluePrimary,
-                                                            fontWeight = FontWeight.ExtraBold,
-                                                            fontSize = 14.sp
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 12.sp
                                                         )
                                                         Text(
-                                                            "حدد احتياجك، المرفقات، نطاق البث، ومستوى الطوارئ لنظامنا التوجيهي.",
+                                                            "أرسل طلب شراء دوائي خاص مع تفاصيل إضافية لإمشاركتنا في تأمينها.",
                                                             color = Color.Gray,
-                                                            fontSize = 11.sp,
+                                                            fontSize = 10.sp,
                                                             textAlign = TextAlign.Right
                                                         )
                                                     }
 
                                                     Box(
                                                         modifier = Modifier
-                                                            .size(48.dp)
-                                                            .background(MedGreenPrimary.copy(alpha = 0.15f), CircleShape),
+                                                            .size(44.dp)
+                                                            .background(MedBluePrimary.copy(alpha = 0.1f), CircleShape),
                                                         contentAlignment = Alignment.Center
                                                     ) {
-                                                        Icon(Icons.Default.AddShoppingCart, contentDescription = null, tint = MedGreenPrimary)
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        item {
-                                            Card(
-                                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                                shape = RoundedCornerShape(12.dp),
-                                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .clickable { clientScreenState = "digital_card_view" }
-                                                    .testTag("launcher_digital_card_btn")
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(20.dp),
-                                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Icon(
-                                                        Icons.Default.ArrowBackIos,
-                                                        contentDescription = null,
-                                                        tint = MedBluePrimary,
-                                                        modifier = Modifier.size(16.dp)
-                                                    )
-
-                                                    Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                                                        Text(
-                                                            "بطاقتي الطبية الرقمية المعتمدة 🛡️",
-                                                            color = MedBluePrimary,
-                                                            fontWeight = FontWeight.ExtraBold,
-                                                            fontSize = 14.sp
-                                                        )
-                                                        Text(
-                                                            "اعرض هويتك الطبية الموثقة ورمز الأمان للمجموعة للمشتريات.",
-                                                            color = Color.Gray,
-                                                            fontSize = 11.sp,
-                                                            textAlign = TextAlign.Right
-                                                        )
-                                                    }
-
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(48.dp)
-                                                            .background(MedBluePrimary.copy(alpha = 0.15f), CircleShape),
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        Icon(Icons.Default.Badge, contentDescription = null, tint = MedBluePrimary)
+                                                        Icon(Icons.Default.AddShoppingCart, contentDescription = null, tint = MedBluePrimary)
                                                     }
                                                 }
                                             }
