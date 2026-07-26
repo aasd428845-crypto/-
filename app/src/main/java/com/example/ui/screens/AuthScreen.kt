@@ -71,6 +71,37 @@ fun AuthScreen(
 
     val supabase = SupabaseClientProvider.client
 
+    suspend fun fetchUserByUid(uid: String): User? {
+        return try {
+            withContext(Dispatchers.IO) {
+                supabase.postgrest["users"]
+                    .select { filter { eq("id", uid) } }
+                    .decodeList<User>()
+                    .firstOrNull()
+            }
+        } catch (e: Exception) { null }
+    }
+
+    suspend fun processAuth(uid: String, isNewUser: Boolean) {
+        val user = fetchUserByUid(uid)
+        if (user == null) {
+            dbError = "لم يتم العثور على المستخدم في قاعدة البيانات. تواصل مع الدعم."
+            return
+        }
+        if (user.role == "company_director") {
+            try { supabase.auth.signOut() } catch (_: Exception) {}
+            dbError = "لوحة المدير العام متاحة فقط عبر تطبيق الويب، هذا التطبيق مخصص لمدراء الفروع والسائقين والعملاء"
+            return
+        }
+        if (user.role == "client") {
+            FirebaseService.getClientProfile(user.userId) { profile ->
+                onAuthSuccess(user, isNewUser || !(profile?.profileCompleted ?: false))
+            }
+        } else {
+            onAuthSuccess(user, isNewUser)
+        }
+    }
+
     // Native Google Sign-In setup
     // ⚠️ استبدل هذا بـ Web Client ID من Google Cloud Console
     val googleWebClientId = "YOUR_GOOGLE_WEB_CLIENT_ID"
@@ -126,39 +157,6 @@ fun AuthScreen(
         } catch (e: ApiException) {
             isGoogleLoading = false
             dbError = "تم إلغاء تسجيل الدخول بـ Google"
-        }
-    }
-
-    // Fetch user from DB by auth UID
-    suspend fun fetchUserByUid(uid: String): User? {
-        return try {
-            withContext(Dispatchers.IO) {
-                supabase.postgrest["users"]
-                    .select { filter { eq("id", uid) } }
-                    .decodeList<User>()
-                    .firstOrNull()
-            }
-        } catch (e: Exception) { null }
-    }
-
-    // Process auth: check role, route correctly
-    suspend fun processAuth(uid: String, isNewUser: Boolean) {
-        val user = fetchUserByUid(uid)
-        if (user == null) {
-            dbError = "لم يتم العثور على المستخدم في قاعدة البيانات. تواصل مع الدعم."
-            return
-        }
-        if (user.role == "company_director") {
-            try { supabase.auth.signOut() } catch (_: Exception) {}
-            dbError = "لوحة المدير العام متاحة فقط عبر تطبيق الويب، هذا التطبيق مخصص لمدراء الفروع والسائقين والعملاء"
-            return
-        }
-        if (user.role == "client") {
-            FirebaseService.getClientProfile(user.userId) { profile ->
-                onAuthSuccess(user, isNewUser || !(profile?.profileCompleted ?: false))
-            }
-        } else {
-            onAuthSuccess(user, isNewUser)
         }
     }
 

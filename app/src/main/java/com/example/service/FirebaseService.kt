@@ -51,74 +51,64 @@ object FirebaseService {
         }
     }
 
-    fun loginUser(email: String, onResult: (User?, String?) -> Unit) {
+    fun loginUser(email: String, password: String, onResult: (User?, String?) -> Unit) {
         scope.launch {
             try {
+                withContext(Dispatchers.IO) {
+                    SupabaseClientProvider.client.auth.signInWith(Email) {
+                        this.email = email.trim()
+                        this.password = password
+                    }
+                }
+                val uid = SupabaseClientProvider.client.auth.currentUserOrNull()?.id
+                if (uid == null) {
+                    withContext(Dispatchers.Main) { onResult(null, "فشل تسجيل الدخول") }
+                    return@launch
+                }
                 val user = withContext(Dispatchers.IO) {
                     SupabaseClientProvider.client.postgrest["users"]
-                        .select {
-                            filter {
-                                eq("email", email.trim())
-                            }
-                        }.decodeList<User>().firstOrNull()
+                        .select { filter { eq("id", uid) } }
+                        .decodeSingleOrNull<User>()
                 }
-                if (user != null) {
-                    currentUserSession = user
-                    withContext(Dispatchers.Main) { onResult(user, null) }
-                } else {
-                    withContext(Dispatchers.Main) { onResult(null, "المستخدم غير موجود في قاعدة البيانات") }
+                currentUserSession = user
+                withContext(Dispatchers.Main) {
+                    onResult(user, if (user == null) "تعذر إيجاد بيانات الحساب في قاعدة البيانات" else null)
                 }
             } catch (e: Exception) {
                 Log.e("SUPABASE_DEBUG", "loginUser failed: ${e.message} | ${e.stackTraceToString()}")
-                lastDatabaseError = "loginUser: ${e.message}"
-                withContext(Dispatchers.Main) { onResult(null, "خطأ في الاتصال بقاعدة البيانات: ${e.message}") }
+                withContext(Dispatchers.Main) { onResult(null, "بيانات الدخول غير صحيحة") }
             }
         }
     }
 
-    fun registerUser(user: User, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+    fun registerUser(
+        email: String,
+        password: String,
+        name: String,
+        role: String,
+        extraFields: Map<String, String> = emptyMap(),
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
         scope.launch {
             try {
-                val exists = withContext(Dispatchers.IO) {
-                    SupabaseClientProvider.client.postgrest["users"]
-                        .select {
-                            filter {
-                                eq("email", user.email.trim())
-                            }
-                        }.decodeList<User>().isNotEmpty()
-                }
-                if (exists) {
-                    withContext(Dispatchers.Main) { onFailure("عذراً، البريد الإلكتروني مسجل مسبقاً") }
-                    return@launch
-                }
-                
-                val finalUserId = if (user.userId.isEmpty()) "user_" + System.currentTimeMillis() else user.userId
-                val finalUser = user.copy(userId = finalUserId)
-                
                 withContext(Dispatchers.IO) {
-                    SupabaseClientProvider.client.postgrest["users"].insert(finalUser)
-                }
-                
-                try {
-                    withContext(Dispatchers.IO) {
-                        SupabaseClientProvider.client.auth.signUpWith(Email) {
-                            email = finalUser.email
-                            password = "default_password_123"
-                            data = buildJsonObject {
-                                put("role", finalUser.role)
-                                put("name", finalUser.name)
-                            }
+                    SupabaseClientProvider.client.auth.signUpWith(Email) {
+                        this.email = email.trim()
+                        this.password = password
+                        data = buildJsonObject {
+                            put("name", name)
+                            put("role", role)
+                            extraFields.forEach { (k, v) -> put(k, v) }
                         }
                     }
-                } catch (authEx: Exception) {
-                    Log.e("SUPABASE_DEBUG", "Auth signUpWith failed (non-blocking): ${authEx.message}")
                 }
-                
-                currentUserSession = finalUser
+                // لا تُدرج أي صف يدوياً بجدول users — الـ trigger handle_new_user بقاعدة البيانات
+                // ينشئ الصف تلقائياً فور نجاح signUpWith أعلاه.
                 withContext(Dispatchers.Main) { onSuccess() }
             } catch (e: Exception) {
                 Log.e("SUPABASE_DEBUG", "registerUser failed: ${e.message} | ${e.stackTraceToString()}")
-                withContext(Dispatchers.Main) { onFailure("خطأ في الاتصال بقاعدة البيانات: ${e.message}") }
+                withContext(Dispatchers.Main) { onFailure(e.message ?: "فشل إنشاء الحساب") }
             }
         }
     }

@@ -9,17 +9,17 @@
 9        android:targetSdkVersion="34" />
 10
 11    <uses-permission android:name="android.permission.INTERNET" />
-11-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:4:5-67
-11-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:4:22-64
+11-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:4:5-67
+11-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:4:22-64
 12    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-12-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:5:5-81
-12-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:5:22-78
+12-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:5:5-81
+12-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:5:22-78
 13    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-13-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:6:5-79
-13-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:6:22-76
+13-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:6:5-79
+13-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:6:22-76
 14    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-14-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:7:5-71
-14-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:7:22-68
+14-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:7:5-71
+14-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:7:22-68
 15
 16    <!-- Include required permissions for Google Maps API to run. -->
 17    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -54,51 +54,51 @@
 33-->[androidx.core:core:1.12.0] C:\Users\USER\.gradle\caches\transforms-3\361e95dfc1ae1f2e60ff94dccd243a3f\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
 34
 35    <application
-35-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:9:5-31:19
+35-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:9:5-31:19
 36        android:allowBackup="true"
-36-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:10:9-35
+36-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:10:9-35
 37        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
 37-->[androidx.core:core:1.12.0] C:\Users\USER\.gradle\caches\transforms-3\361e95dfc1ae1f2e60ff94dccd243a3f\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
 38        android:debuggable="true"
 39        android:extractNativeLibs="false"
 40        android:icon="@android:drawable/sym_def_app_icon"
-40-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:11:9-58
+40-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:11:9-58
 41        android:label="@string/app_name"
-41-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:12:9-41
+41-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:12:9-41
 42        android:roundIcon="@android:drawable/sym_def_app_icon"
-42-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:13:9-63
+42-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:13:9-63
 43        android:supportsRtl="true"
-43-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:14:9-35
+43-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:14:9-35
 44        android:theme="@android:style/Theme.Material.NoActionBar" >
-44-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:15:9-66
+44-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:15:9-66
 45        <activity
-45-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:17:9-26:20
+45-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:17:9-26:20
 46            android:name="com.example.MainActivity"
-46-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:18:13-41
+46-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:18:13-41
 47            android:exported="true"
-47-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:19:13-36
+47-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:19:13-36
 48            android:label="@string/app_name"
-48-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:20:13-45
+48-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:20:13-45
 49            android:theme="@android:style/Theme.Material.NoActionBar" >
-49-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:21:13-70
+49-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:21:13-70
 50            <intent-filter>
-50-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:22:13-25:29
+50-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:22:13-25:29
 51                <action android:name="android.intent.action.MAIN" />
-51-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:23:17-69
-51-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:23:25-66
+51-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:23:17-69
+51-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:23:25-66
 52
 53                <category android:name="android.intent.category.LAUNCHER" />
-53-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:24:17-77
-53-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:24:27-74
+53-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:24:17-77
+53-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:24:27-74
 54            </intent-filter>
 55        </activity>
 56
 57        <meta-data
-57-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:28:9-30:71
+57-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:28:9-30:71
 58            android:name="com.google.android.geo.API_KEY"
-58-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:29:13-58
+58-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:29:13-58
 59            android:value="AIzaSyDummyKeyForCompilationPurposeOnly" />
-59-->C:\Users\USER\MedLin-1\app\src\main\AndroidManifest.xml:30:13-68
+59-->C:\Users\USER\MedLin\app\src\main\AndroidManifest.xml:30:13-68
 60        <!-- Needs to be explicitly declared on P+ -->
 61        <uses-library
 61-->[com.google.android.gms:play-services-maps:18.2.0] C:\Users\USER\.gradle\caches\transforms-3\1cf2a3085101c3850b189e734dcd1554\transformed\play-services-maps-18.2.0\AndroidManifest.xml:39:9-41:40

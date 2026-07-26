@@ -52,9 +52,9 @@ com.example.app-lifecycle-viewmodel-release-50 C:\Users\USER\.gradle\caches\tran
 com.example.app-activity-ktx-1.8.2-51 C:\Users\USER\.gradle\caches\transforms-3\ed19f6f4776269d7a5b0ea23b21b7184\transformed\activity-ktx-1.8.2\res
 com.example.app-lifecycle-runtime-release-52 C:\Users\USER\.gradle\caches\transforms-3\f47844a6f9aee43a99009c0c28b69edf\transformed\lifecycle-runtime-release\res
 com.example.app-maps-compose-4.3.3-53 C:\Users\USER\.gradle\caches\transforms-3\f98c6b38fe5892ae467c7a992d18720a\transformed\maps-compose-4.3.3\res
-com.example.app-resValues-54 C:\Users\USER\MedLin-1\app\build\generated\res\resValues\debug
-com.example.app-packageDebugResources-55 C:\Users\USER\MedLin-1\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
-com.example.app-packageDebugResources-56 C:\Users\USER\MedLin-1\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
-com.example.app-debug-57 C:\Users\USER\MedLin-1\app\build\intermediates\merged_res\debug\mergeDebugResources
-com.example.app-debug-58 C:\Users\USER\MedLin-1\app\src\debug\res
-com.example.app-main-59 C:\Users\USER\MedLin-1\app\src\main\res
+com.example.app-resValues-54 C:\Users\USER\MedLin\app\build\generated\res\resValues\debug
+com.example.app-packageDebugResources-55 C:\Users\USER\MedLin\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.example.app-packageDebugResources-56 C:\Users\USER\MedLin\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.example.app-debug-57 C:\Users\USER\MedLin\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.example.app-debug-58 C:\Users\USER\MedLin\app\src\debug\res
+com.example.app-main-59 C:\Users\USER\MedLin\app\src\main\res

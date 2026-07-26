@@ -9224,23 +9224,6 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\USER\\MedLin-1\\app\\src\\main\\res\\values\\strings.xml",
-                    "from": {
-                        "startLines": "2",
-                        "startColumns": "4",
-                        "startOffsets": "57",
-                        "endColumns": "50",
-                        "endOffsets": "103"
-                    },
-                    "to": {
-                        "startLines": "119",
-                        "startColumns": "4",
-                        "startOffsets": "7454",
-                        "endColumns": "50",
-                        "endOffsets": "7500"
-                    }
-                },
-                {
                     "source": "C:\\Users\\USER\\.gradle\\caches\\transforms-3\\900134aedf1c2953723e62bbc2e1635d\\transformed\\navigation-common-2.7.7\\res\\values\\values.xml",
                     "from": {
                         "startLines": "2,15,21,27,30",
@@ -9325,6 +9308,23 @@
                         "startOffsets": "6909",
                         "endColumns": "42",
                         "endOffsets": "6947"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\USER\\MedLin\\app\\src\\main\\res\\values\\strings.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "57",
+                        "endColumns": "50",
+                        "endOffsets": "103"
+                    },
+                    "to": {
+                        "startLines": "119",
+                        "startColumns": "4",
+                        "startOffsets": "7454",
+                        "endColumns": "50",
+                        "endOffsets": "7500"
                     }
                 },
                 {
