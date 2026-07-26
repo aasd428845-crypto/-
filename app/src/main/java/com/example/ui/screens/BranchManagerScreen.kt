@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.media.MediaPlayer
 import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -425,6 +426,15 @@ fun BranchManagerScreen(
                                                                         ) {
                                                                             Text(if (order.clientType == "hospital") "مستشفى 🏥" else "صيدلية 💊", fontSize = 9.sp, color = MedBluePrimary)
                                                                         }
+                                                                        if (order.isSpecialRequest) {
+                                                                            Box(
+                                                                                modifier = Modifier
+                                                                                    .background(WarningAmber.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                                                                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                                            ) {
+                                                                                Text("⭐ طلب خاص", fontSize = 9.sp, color = WarningAmber, fontWeight = FontWeight.Bold)
+                                                                            }
+                                                                        }
                                                                     }
                                                                 }
 
@@ -462,6 +472,46 @@ fun BranchManagerScreen(
                                                                     .background(Color(0xFFF8FAFC), RoundedCornerShape(6.dp))
                                                                     .padding(8.dp)
                                                             )
+
+                                                            // Audio note playback for special requests
+                                                            if (order.isSpecialRequest && order.audioNoteUrl != null) {
+                                                                var isPlayingAudio by remember { mutableStateOf(false) }
+                                                                var audioPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+                                                                OutlinedButton(
+                                                                    onClick = {
+                                                                        if (isPlayingAudio) {
+                                                                            try { audioPlayer?.stop(); audioPlayer?.release() } catch (_: Exception) {}
+                                                                            audioPlayer = null
+                                                                            isPlayingAudio = false
+                                                                        } else {
+                                                                            try {
+                                                                                val player = MediaPlayer().apply {
+                                                                                    setDataSource(order.audioNoteUrl)
+                                                                                    prepareAsync()
+                                                                                    setOnPreparedListener { start(); isPlayingAudio = true }
+                                                                                    setOnCompletionListener { isPlayingAudio = false; release() }
+                                                                                }
+                                                                                audioPlayer = player
+                                                                            } catch (e: Exception) {
+                                                                                Toast.makeText(context, "فشل تشغيل الملاحظة الصوتية", Toast.LENGTH_SHORT).show()
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    shape = RoundedCornerShape(8.dp),
+                                                                    modifier = Modifier
+                                                                        .fillMaxWidth()
+                                                                        .height(36.dp)
+                                                                        .testTag("play_audio_${order.orderId}"),
+                                                                    border = androidx.compose.foundation.BorderStroke(1.dp, WarningAmber)
+                                                                ) {
+                                                                    Text(
+                                                                        if (isPlayingAudio) "⏸️ إيقاف التشغيل" else "▶️ تشغيل الملاحظة الصوتية",
+                                                                        color = WarningAmber,
+                                                                        fontWeight = FontWeight.SemiBold,
+                                                                        fontSize = 11.sp
+                                                                    )
+                                                                }
+                                                            }
 
                                                             Row(
                                                                 modifier = Modifier.fillMaxWidth(),

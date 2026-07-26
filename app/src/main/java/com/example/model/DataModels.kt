@@ -277,7 +277,9 @@ data class Order(
     @SerialName("delivery_method") val deliveryMethod: String = "", // "self" or "platform"
     @SerialName("delivery_scheduled_date") val deliveryScheduledDate: String = "",
     @SerialName("parent_order_id") val parentOrderId: String = "",       // فارغ في الطلب الأصلي، يشير لمعرف الطلب الأصلي في أي "طلب فرعي" ناتج عن تحويل جزئي
-    @SerialName("scheduled_delivery_date") val scheduledDeliveryDate: Long = 0L // يُحدَّد لاحقاً في الجزء ج
+    @SerialName("scheduled_delivery_date") val scheduledDeliveryDate: Long = 0L, // يُحدَّد لاحقاً في الجزء ج
+    @SerialName("is_special_request") val isSpecialRequest: Boolean = false,
+    @SerialName("audio_note_url") val audioNoteUrl: String? = null
 )
 
 

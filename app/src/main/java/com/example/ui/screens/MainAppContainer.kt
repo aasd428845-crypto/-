@@ -30,6 +30,7 @@ import com.example.service.FirebaseService
 import com.example.ui.theme.MedBluePrimary
 import com.example.ui.theme.MedGreenPrimary
 import com.example.ui.theme.MedRedPrimary
+import com.example.ui.screens.AuthScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,175 +70,12 @@ fun MainAppContainer() {
     }
 
     if (userLoggedIn == null) {
-        // --- 🟢 Login / Welcome Screen 🟢 ---
-        var emailInput by remember { mutableStateOf("") }
-        var isProgressing by remember { mutableStateOf(false) }
-
-        Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text("ميد-لينك اليمن | MedLink Yemen 🏥", fontWeight = FontWeight.ExtraBold, color = Color.White) },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MedBluePrimary, titleContentColor = Color.White)
-                )
+        AuthScreen(
+            onAuthSuccess = { user, isNewUser ->
+                userLoggedIn = user
+                currentScreenState = "dashboard"
             }
-        ) { paddingVals ->
-            Column(
-                modifier = Modifier
-                    .padding(paddingVals)
-                    .fillMaxSize()
-                    .background(Color(0xFF0F172A)) // Aesthetic dark cosmic theme
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Branded Logo Card
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .background(MedBluePrimary, CircleShape)
-                        .border(3.dp, MedGreenPrimary, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MedicalServices,
-                        contentDescription = "Logo",
-                        tint = MedGreenPrimary,
-                        modifier = Modifier.size(50.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Text(
-                    text = "مِنصة الإمداد والوساطة الدوائية الذكية",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = "رابط آمن ومباشر بين المستشفيات والشركات الموردة للأدوية في اليمن لتخطيط الدفع واللوجستيات المبردة",
-                    color = Color.LightGray,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                )
-
-                Spacer(modifier = Modifier.height(30.dp))
-
-                // Standard email input
-                OutlinedTextField(
-                    value = emailInput,
-                    onValueChange = { emailInput = it },
-                    label = { Text("أدخل بريدك الإلكتروني للتجربة") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("login_email_input"),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedLabelColor = MedGreenPrimary,
-                        unfocusedLabelColor = Color.LightGray,
-                        focusedBorderColor = MedGreenPrimary,
-                        unfocusedBorderColor = Color.Gray
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Button(
-                    onClick = {
-                        if (emailInput.isBlank()) {
-                            Toast.makeText(context, "الرجاء كتابة البريد الإلكتروني أو اختيار حساب تجريبي بالأسفل 👇", Toast.LENGTH_SHORT).show()
-                            return@Button
-                        }
-                        isProgressing = true
-                        FirebaseService.loginUser(emailInput) { user, _ ->
-                            userLoggedIn = user
-                            currentScreenState = "dashboard"
-                            isProgressing = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .testTag("login_submit_btn"),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    if (isProgressing) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                    } else {
-                        Text("الدخول للمنصة ➡️", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text("👇 أو تسجيل الدخول السريع كأحد الأطراف للتجربة:", color = Color.LightGray, fontSize = 11.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Quick Login Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            emailInput = "thawra@hospital.com"
-                            FirebaseService.loginUser(emailInput) { user, _ ->
-                                userLoggedIn = user
-                                currentScreenState = "dashboard"
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(40.dp)
-                            .testTag("login_as_client_btn"),
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text("🏥 مستشفى الثورة (عميل)", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    Button(
-                        onClick = {
-                            emailInput = "sanaa@alshefa.com"
-                            FirebaseService.loginUser(emailInput) { user, _ ->
-                                userLoggedIn = user
-                                currentScreenState = "dashboard"
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(40.dp)
-                            .testTag("login_as_branch_manager_btn"),
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text("💼 مدير فرع صنعاء", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    Button(
-                        onClick = {
-                            emailInput = "director@alshefa.com"
-                            FirebaseService.loginUser(emailInput) { user, _ ->
-                                userLoggedIn = user
-                                currentScreenState = "dashboard"
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(40.dp)
-                            .testTag("login_as_director_btn"),
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text("👑 المدير العام", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
+        )
     } else {
         // Logged in. Dispatch based on the new single-company role model
         val loggedUser = userLoggedIn!!

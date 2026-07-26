@@ -37,6 +37,7 @@ import com.example.model.OrderStatus
 import com.example.model.PharmaProduct
 import com.example.model.PromotionalOffer
 import com.example.service.FirebaseService
+import com.example.ui.screens.SpecialItemRequestScreen
 import com.example.ui.theme.*
 import com.example.utils.calculateReorderSuggestions
 import com.example.utils.ReorderUrgency
@@ -171,6 +172,17 @@ fun ClientScreen(
                     branchId = clientProfileState?.assignedBranchId ?: ""
                 )
             }
+            "special_item_request" -> {
+                SpecialItemRequestScreen(
+                    currentUser = currentUser,
+                    onBackClick = { clientScreenState = "dashboard" },
+                    onSuccess = {
+                        clientScreenState = "dashboard"
+                        activeTab = "my_orders"
+                        refreshOrders()
+                    }
+                )
+            }
             "cart" -> {
                 CartScreen(
                     currentUser = currentUser,
@@ -294,6 +306,7 @@ fun ClientScreen(
                                 "my_orders" -> 1
                                 "financial" -> 2
                                 "account" -> 3
+                                else -> 0
                             },
                             containerColor = Color.White,
                             contentColor = MedBluePrimary
@@ -602,7 +615,7 @@ fun ClientScreen(
                                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .clickable { clientScreenState = "new_order_flow" }
+                                                    .clickable { clientScreenState = "special_item_request" }
                                                     .testTag("launcher_new_order_btn")
                                             ) {
                                                 Row(

@@ -72,7 +72,11 @@ dependencies {
     // Supabase
     implementation("io.github.jan-tennert.supabase:postgrest-kt:2.5.0")
     implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.0")
+    implementation("io.github.jan-tennert.supabase:storage-kt:2.5.0")
     implementation("io.ktor:ktor-client-android:2.3.12")
+
+    // Google Sign-In (native account picker)
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     // Testing
