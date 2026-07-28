@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,6 +28,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.example.model.User
 import com.example.service.FirebaseService
 import com.example.service.SupabaseClientProvider
@@ -33,6 +36,7 @@ import com.example.ui.theme.*
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.location.LocationServices
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.gotrue.providers.builtin.IDToken
@@ -59,17 +63,31 @@ fun AuthScreen(
 
     // Signup states
     var orgName by remember { mutableStateOf("") }
+    var ownerName by remember { mutableStateOf("") }
     var clientType by remember { mutableStateOf("hospital") }
     var phoneInput by remember { mutableStateOf("") }
+    var facilityPhone by remember { mutableStateOf("") }
+    var governorate by remember { mutableStateOf("") }
+    var district by remember { mutableStateOf("") }
+    var nearestLandmark by remember { mutableStateOf("") }
+    var latitude by remember { mutableStateOf<Double?>(null) }
+    var longitude by remember { mutableStateOf<Double?>(null) }
     var signupEmail by remember { mutableStateOf("") }
     var signupPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var governorateExpanded by remember { mutableStateOf(false) }
 
     var isProgressing by remember { mutableStateOf(false) }
+    var isLocationLoading by remember { mutableStateOf(false) }
     var dbError by remember { mutableStateOf<String?>(null) }
     var isGoogleLoading by remember { mutableStateOf(false) }
 
     val supabase = SupabaseClientProvider.client
+    val governorates = listOf(
+        "صنعاء", "عدن", "تعز", "الحديدة", "إب", "الضالع", "ذمار", "المهرة", "حضرموت",
+        "حجة", "عمران", "البيضاء", "الجوف", "صعدة", "لحج", "ريمة", "أبين", "مأرب", "سقطرى"
+    )
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     suspend fun fetchUserByUid(uid: String): User? {
         return try {
@@ -103,8 +121,7 @@ fun AuthScreen(
     }
 
     // Native Google Sign-In setup
-    // ⚠️ استبدل هذا بـ Web Client ID من Google Cloud Console
-    val googleWebClientId = "YOUR_GOOGLE_WEB_CLIENT_ID"
+    val googleWebClientId = "448796262930-jpq327km8kb081b8ikff1fjipjrqolf5.apps.googleusercontent.com"
     val googleSignInClient = remember {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(googleWebClientId)
@@ -160,16 +177,45 @@ fun AuthScreen(
         }
     }
 
+    fun requestCurrentLocation() {
+        val permission = Manifest.permission.ACCESS_FINE_LOCATION
+        if (ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(context, "يرجى منح إذن الموقع لتحديد الموقع الحالي", Toast.LENGTH_SHORT).show()
+            return
+        }
+        isLocationLoading = true
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            isLocationLoading = false
+            if (location != null) {
+                latitude = location.latitude
+                longitude = location.longitude
+                Toast.makeText(context, "تم حفظ الموقع الحالي مؤقتاً", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "تعذر الحصول على الموقع الحالي", Toast.LENGTH_SHORT).show()
+            }
+        }.addOnFailureListener { e ->
+            isLocationLoading = false
+            Toast.makeText(context, "فشل تحديد الموقع: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // Email/Password submit
     fun performAuth() {
-        val em = if (selectedTab == 0) emailInput else signupEmail
+        val em = (if (selectedTab == 0) emailInput else signupEmail).trim()
         val pw = if (selectedTab == 0) passwordInput else signupPassword
+        val trimmedOrgName = orgName.trim()
+        val trimmedOwnerName = ownerName.trim()
+        val trimmedFacilityPhone = facilityPhone.trim()
+        val trimmedGovernorate = governorate.trim()
+        val trimmedDistrict = district.trim()
+        val trimmedNearestLandmark = nearestLandmark.trim()
+        val trimmedPhoneInput = phoneInput.trim()
         if (em.isBlank() || pw.isBlank()) {
             Toast.makeText(context, "الرجاء تعبئة كافة الحقول المطلوبة", Toast.LENGTH_SHORT).show()
             return
         }
         if (selectedTab == 1) {
-            if (orgName.isBlank()) {
+            if (trimmedOrgName.isBlank()) {
                 Toast.makeText(context, "الرجاء إدخال اسم المنشأة", Toast.LENGTH_SHORT).show(); return
             }
             if (pw.length < 6) {
@@ -196,12 +242,24 @@ fun AuthScreen(
                         email = em; password = pw
                         data = buildJsonObject {
                             put("role", "client")
-                            put("org_name", orgName)
+                            put("org_name", trimmedOrgName)
+                            put("owner_name", trimmedOwnerName)
                             put("client_type", clientType)
-                            put("phone", phoneInput)
+                            put("phone", trimmedPhoneInput)
+                            put("facility_phone", trimmedFacilityPhone)
+                            put("governorate", trimmedGovernorate)
+                            put("district", trimmedDistrict)
+                            put("nearest_landmark", trimmedNearestLandmark)
+                            put("latitude", latitude ?: 0.0)
+                            put("longitude", longitude ?: 0.0)
                             putJsonObject("facility_info") {
                                 put("type", clientType)
-                                put("name", orgName)
+                                put("name", trimmedOrgName)
+                                put("owner_name", trimmedOwnerName)
+                                put("facility_phone", trimmedFacilityPhone)
+                                put("governorate", trimmedGovernorate)
+                                put("district", trimmedDistrict)
+                                put("nearest_landmark", trimmedNearestLandmark)
                             }
                         }
                     }
@@ -337,7 +395,93 @@ fun AuthScreen(
                         singleLine = true
                     )
 
-                    // Phone
+                    // Owner Name
+                    OutlinedTextField(
+                        value = ownerName, onValueChange = { ownerName = it },
+                        label = { Text("اسم صاحب/مديرة المنشأة") },
+                        leadingIcon = { Icon(Icons.Default.Person, null, tint = TextSecondaryGray) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
+                        singleLine = true
+                    )
+
+                    // Facility Phone
+                    OutlinedTextField(
+                        value = facilityPhone, onValueChange = { facilityPhone = it },
+                        label = { Text("هاتف المنشأة") },
+                        leadingIcon = { Icon(Icons.Default.Phone, null, tint = TextSecondaryGray) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
+                        singleLine = true
+                    )
+
+                    // Governorate Dropdown
+                    ExposedDropdownMenuBox(
+                        expanded = governorateExpanded,
+                        onExpandedChange = { governorateExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = governorate,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("المحافظة") },
+                            leadingIcon = { Icon(Icons.Default.LocationCity, null, tint = TextSecondaryGray) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = governorateExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
+                            singleLine = true
+                        )
+                        ExposedDropdownMenu(
+                            expanded = governorateExpanded,
+                            onDismissRequest = { governorateExpanded = false }
+                        ) {
+                            governorates.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        governorate = option
+                                        governorateExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // District
+                    OutlinedTextField(
+                        value = district, onValueChange = { district = it },
+                        label = { Text("المديرية") },
+                        leadingIcon = { Icon(Icons.Default.Map, null, tint = TextSecondaryGray) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
+                        singleLine = true
+                    )
+
+                    // Landmark
+                    OutlinedTextField(
+                        value = nearestLandmark, onValueChange = { nearestLandmark = it },
+                        label = { Text("الحي أو أقرب معلم") },
+                        leadingIcon = { Icon(Icons.Default.Place, null, tint = TextSecondaryGray) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
+                        singleLine = true
+                    )
+
+                    Button(
+                        onClick = { requestCurrentLocation() },
+                        enabled = !isLocationLoading,
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = OnBrandPrimary),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isLocationLoading) {
+                            CircularProgressIndicator(color = OnBrandPrimary, modifier = Modifier.size(20.dp))
+                        } else {
+                            Text("📍 تحديد الموقع الجغرافي الحالي", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    // Personal Phone
                     OutlinedTextField(
                         value = phoneInput, onValueChange = { phoneInput = it },
                         label = { Text("رقم الهاتف") },

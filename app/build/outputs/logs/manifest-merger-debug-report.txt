@@ -8,6 +8,7 @@ MERGED from [com.google.maps.android:maps-compose:4.3.3] C:\Users\USER\.gradle\c
 MERGED from [com.google.maps.android:maps-ktx:5.0.0] C:\Users\USER\.gradle\caches\transforms-3\1b8f96f1ecc9e230525dffad5485b5a7\transformed\maps-ktx-5.0.0\AndroidManifest.xml:18:1-23:12
 MERGED from [com.google.android.gms:play-services-maps:18.2.0] C:\Users\USER\.gradle\caches\transforms-3\1cf2a3085101c3850b189e734dcd1554\transformed\play-services-maps-18.2.0\AndroidManifest.xml:17:1-44:12
 MERGED from [com.google.android.gms:play-services-auth:21.2.0] C:\Users\USER\.gradle\caches\transforms-3\22ef553655566726613241f52bc9d24a\transformed\play-services-auth-21.2.0\AndroidManifest.xml:17:1-40:12
+MERGED from [com.google.android.gms:play-services-location:21.2.0] C:\Users\USER\.gradle\caches\transforms-3\5310a49a3039ed16ab96687a63a0060c\transformed\play-services-location-21.2.0\AndroidManifest.xml:2:1-9:12
 MERGED from [com.google.android.gms:play-services-auth-api-phone:18.0.2] C:\Users\USER\.gradle\caches\transforms-3\c37ac54c57fd7d6575ca26d86427821b\transformed\play-services-auth-api-phone-18.0.2\AndroidManifest.xml:2:1-7:12
 MERGED from [com.google.android.gms:play-services-auth-base:18.0.10] C:\Users\USER\.gradle\caches\transforms-3\24f12f81b0a9cb96d706c8b4d3d34642\transformed\play-services-auth-base-18.0.10\AndroidManifest.xml:2:1-7:12
 MERGED from [com.google.android.gms:play-services-fido:20.0.1] C:\Users\USER\.gradle\caches\transforms-3\90327d5e9e69d626538e008ac3e973a3\transformed\play-services-fido-20.0.1\AndroidManifest.xml:2:1-10:12
@@ -115,6 +116,8 @@ MERGED from [com.google.android.gms:play-services-maps:18.2.0] C:\Users\USER\.gr
 MERGED from [com.google.android.gms:play-services-maps:18.2.0] C:\Users\USER\.gradle\caches\transforms-3\1cf2a3085101c3850b189e734dcd1554\transformed\play-services-maps-18.2.0\AndroidManifest.xml:36:5-42:19
 MERGED from [com.google.android.gms:play-services-auth:21.2.0] C:\Users\USER\.gradle\caches\transforms-3\22ef553655566726613241f52bc9d24a\transformed\play-services-auth-21.2.0\AndroidManifest.xml:22:5-38:19
 MERGED from [com.google.android.gms:play-services-auth:21.2.0] C:\Users\USER\.gradle\caches\transforms-3\22ef553655566726613241f52bc9d24a\transformed\play-services-auth-21.2.0\AndroidManifest.xml:22:5-38:19
+MERGED from [com.google.android.gms:play-services-location:21.2.0] C:\Users\USER\.gradle\caches\transforms-3\5310a49a3039ed16ab96687a63a0060c\transformed\play-services-location-21.2.0\AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.gms:play-services-location:21.2.0] C:\Users\USER\.gradle\caches\transforms-3\5310a49a3039ed16ab96687a63a0060c\transformed\play-services-location-21.2.0\AndroidManifest.xml:7:5-20
 MERGED from [com.google.android.gms:play-services-fido:20.0.1] C:\Users\USER\.gradle\caches\transforms-3\90327d5e9e69d626538e008ac3e973a3\transformed\play-services-fido-20.0.1\AndroidManifest.xml:7:5-8:19
 MERGED from [com.google.android.gms:play-services-fido:20.0.1] C:\Users\USER\.gradle\caches\transforms-3\90327d5e9e69d626538e008ac3e973a3\transformed\play-services-fido-20.0.1\AndroidManifest.xml:7:5-8:19
 MERGED from [com.google.android.gms:play-services-base:18.3.0] C:\Users\USER\.gradle\caches\transforms-3\d3c0b79141fa4bd098400ecd9681c9e5\transformed\play-services-base-18.3.0\AndroidManifest.xml:19:5-23:19
@@ -197,6 +200,8 @@ MERGED from [com.google.android.gms:play-services-maps:18.2.0] C:\Users\USER\.gr
 MERGED from [com.google.android.gms:play-services-maps:18.2.0] C:\Users\USER\.gradle\caches\transforms-3\1cf2a3085101c3850b189e734dcd1554\transformed\play-services-maps-18.2.0\AndroidManifest.xml:20:5-44
 MERGED from [com.google.android.gms:play-services-auth:21.2.0] C:\Users\USER\.gradle\caches\transforms-3\22ef553655566726613241f52bc9d24a\transformed\play-services-auth-21.2.0\AndroidManifest.xml:20:5-44
 MERGED from [com.google.android.gms:play-services-auth:21.2.0] C:\Users\USER\.gradle\caches\transforms-3\22ef553655566726613241f52bc9d24a\transformed\play-services-auth-21.2.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.gms:play-services-location:21.2.0] C:\Users\USER\.gradle\caches\transforms-3\5310a49a3039ed16ab96687a63a0060c\transformed\play-services-location-21.2.0\AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.gms:play-services-location:21.2.0] C:\Users\USER\.gradle\caches\transforms-3\5310a49a3039ed16ab96687a63a0060c\transformed\play-services-location-21.2.0\AndroidManifest.xml:5:5-44
 MERGED from [com.google.android.gms:play-services-auth-api-phone:18.0.2] C:\Users\USER\.gradle\caches\transforms-3\c37ac54c57fd7d6575ca26d86427821b\transformed\play-services-auth-api-phone-18.0.2\AndroidManifest.xml:5:5-44
 MERGED from [com.google.android.gms:play-services-auth-api-phone:18.0.2] C:\Users\USER\.gradle\caches\transforms-3\c37ac54c57fd7d6575ca26d86427821b\transformed\play-services-auth-api-phone-18.0.2\AndroidManifest.xml:5:5-44
 MERGED from [com.google.android.gms:play-services-auth-base:18.0.10] C:\Users\USER\.gradle\caches\transforms-3\24f12f81b0a9cb96d706c8b4d3d34642\transformed\play-services-auth-base-18.0.10\AndroidManifest.xml:5:5-44
