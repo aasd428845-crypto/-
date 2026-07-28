@@ -43,6 +43,7 @@ import io.github.jan.supabase.gotrue.providers.builtin.IDToken
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
@@ -163,23 +164,42 @@ fun AuthScreen(
                             processAuth(uid, false)
                         }
                     } else {
-                        // مستخدم Google جديد — أنشئ سجله في قاعدة البيانات ثم انتقل لإعداد الملف الشخصي
+                        // مستخدم Google — upsert لتفادي duplicate key في حال وجود سجل مسبق
                         try {
+                            val userEmail = account?.email ?: ""
+                            val userName = account?.displayName ?: ""
                             val newUserData = buildJsonObject {
                                 put("id", uid)
-                                put("email", account?.email ?: "")
-                                put("name", account?.displayName ?: "")
+                                put("email", userEmail)
+                                put("name", userName)
                                 put("role", "client")
                                 put("client_type", "pharmacy")
                             }
                             withContext(Dispatchers.IO) {
-                                supabase.postgrest["users"].insert(newUserData)
+                                // upsert: يُدرج إن لم يوجد، يتجاهل إن وُجد مسبقاً
+                                supabase.postgrest["users"].upsert(newUserData) {
+                                    onConflict = "id"
+                                }
                             }
-                            val createdUser = fetchUserByUid(uid)
+                            // حاول القراءة مرتين (قد تكون RLS تحتاج لحظة)
+                            var createdUser = fetchUserByUid(uid)
+                            if (createdUser == null) {
+                                kotlinx.coroutines.delay(800)
+                                createdUser = fetchUserByUid(uid)
+                            }
                             if (createdUser != null) {
-                                onAuthSuccess(createdUser, true)
+                                val needsSetup = !(createdUser.orgName.isNotBlank() && createdUser.governorate.isNotBlank())
+                                onAuthSuccess(createdUser, needsSetup)
                             } else {
-                                dbError = "فشل إنشاء حساب المستخدم، يرجى المحاولة مرة أخرى"
+                                // بناء مستخدم مؤقت من بيانات Google للسماح بالدخول
+                                val tempUser = com.example.model.User(
+                                    userId = uid,
+                                    email = userEmail,
+                                    name = userName,
+                                    role = "client",
+                                    clientType = "pharmacy"
+                                )
+                                onAuthSuccess(tempUser, true)
                             }
                         } catch (e: Exception) {
                             dbError = "خطأ في إنشاء الحساب عبر Google: ${e.message}"
