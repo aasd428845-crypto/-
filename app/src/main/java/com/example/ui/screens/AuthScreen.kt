@@ -171,8 +171,6 @@ fun AuthScreen(
                                 put("name", account?.displayName ?: "")
                                 put("role", "client")
                                 put("client_type", "pharmacy")
-                                put("is_active", true)
-                                put("is_verified", false)
                             }
                             withContext(Dispatchers.IO) {
                                 supabase.postgrest["users"].insert(newUserData)
