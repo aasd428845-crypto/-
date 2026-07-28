@@ -164,45 +164,43 @@ fun AuthScreen(
                             processAuth(uid, false)
                         }
                     } else {
-                        // مستخدم Google — upsert لتفادي duplicate key في حال وجود سجل مسبق
+                        // الصف موجود بالجدول بفضل trigger handle_new_user — نحدّث الاسم والإيميل فقط
+                        val userEmail = account?.email ?: ""
+                        val userName = account?.displayName ?: ""
                         try {
-                            val userEmail = account?.email ?: ""
-                            val userName = account?.displayName ?: ""
-                            val newUserData = buildJsonObject {
-                                put("id", uid)
-                                put("email", userEmail)
-                                put("name", userName)
-                                put("role", "client")
-                                put("client_type", "pharmacy")
-                            }
                             withContext(Dispatchers.IO) {
-                                // upsert: يُدرج إن لم يوجد، يتجاهل إن وُجد مسبقاً
-                                supabase.postgrest["users"].upsert(newUserData) {
-                                    onConflict = "id"
+                                supabase.postgrest["users"].update(
+                                    buildJsonObject {
+                                        put("name", userName)
+                                        put("email", userEmail)
+                                    }
+                                ) {
+                                    filter { eq("id", uid) }
                                 }
                             }
-                            // حاول القراءة مرتين (قد تكون RLS تحتاج لحظة)
-                            var createdUser = fetchUserByUid(uid)
-                            if (createdUser == null) {
-                                kotlinx.coroutines.delay(800)
-                                createdUser = fetchUserByUid(uid)
-                            }
-                            if (createdUser != null) {
-                                val needsSetup = !(createdUser.orgName.isNotBlank() && createdUser.governorate.isNotBlank())
-                                onAuthSuccess(createdUser, needsSetup)
-                            } else {
-                                // بناء مستخدم مؤقت من بيانات Google للسماح بالدخول
-                                val tempUser = com.example.model.User(
-                                    userId = uid,
-                                    email = userEmail,
-                                    name = userName,
-                                    role = "client",
-                                    clientType = "pharmacy"
-                                )
-                                onAuthSuccess(tempUser, true)
-                            }
                         } catch (e: Exception) {
-                            dbError = "خطأ في إنشاء الحساب عبر Google: ${e.message}"
+                            android.util.Log.e("SUPABASE_DEBUG", "Google user update failed: ${e.message}")
+                            // لا نوقف تدفق تسجيل الدخول — المستخدم موجود أصلاً
+                        }
+                        // اقرأ المستخدم بعد التحديث
+                        var googleUser = fetchUserByUid(uid)
+                        if (googleUser == null) {
+                            delay(800)
+                            googleUser = fetchUserByUid(uid)
+                        }
+                        if (googleUser != null) {
+                            val needsSetup = !(googleUser.orgName.isNotBlank() && googleUser.governorate.isNotBlank())
+                            onAuthSuccess(googleUser, needsSetup)
+                        } else {
+                            // مستخدم مؤقت كملاذ أخير إذا فشلت القراءة
+                            val tempUser = com.example.model.User(
+                                userId = uid,
+                                email = userEmail,
+                                name = userName,
+                                role = "client",
+                                clientType = "pharmacy"
+                            )
+                            onAuthSuccess(tempUser, true)
                         }
                     }
                 } catch (e: Exception) {

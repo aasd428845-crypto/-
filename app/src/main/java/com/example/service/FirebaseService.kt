@@ -1,4 +1,4 @@
-﻿package com.example.service
+package com.example.service
 
 import android.util.Log
 import com.example.model.*
@@ -6,6 +6,7 @@ import kotlin.math.*
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.coroutines.CoroutineScope
@@ -1508,7 +1509,15 @@ object FirebaseService {
                     val updatedUser = user.copy(
                         clientAccount = currentAcc.copy(currentBalance = newBalance)
                     )
-                    SupabaseClientProvider.client.postgrest["users"].upsert(updatedUser)
+                    SupabaseClientProvider.client.postgrest["users"].update(
+                        buildJsonObject {
+                            put("client_account", kotlinx.serialization.json.Json.encodeToJsonElement(
+                                ClientAccount.serializer(), updatedUser.clientAccount
+                            ))
+                        }
+                    ) {
+                        filter { eq("id", clientId) }
+                    }
                 } catch (ex: Exception) {
                     Log.e("SUPABASE_DEBUG", "allocateAndInvoiceOrder user update warning: ${ex.message}")
                 }
