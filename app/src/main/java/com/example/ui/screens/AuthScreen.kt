@@ -163,7 +163,29 @@ fun AuthScreen(
                             processAuth(uid, false)
                         }
                     } else {
-                        processAuth(uid, true)
+                        // مستخدم Google جديد — أنشئ سجله في قاعدة البيانات ثم انتقل لإعداد الملف الشخصي
+                        try {
+                            val newUserData = buildJsonObject {
+                                put("id", uid)
+                                put("email", account?.email ?: "")
+                                put("name", account?.displayName ?: "")
+                                put("role", "client")
+                                put("client_type", "pharmacy")
+                                put("is_active", true)
+                                put("is_verified", false)
+                            }
+                            withContext(Dispatchers.IO) {
+                                supabase.postgrest["users"].insert(newUserData)
+                            }
+                            val createdUser = fetchUserByUid(uid)
+                            if (createdUser != null) {
+                                onAuthSuccess(createdUser, true)
+                            } else {
+                                dbError = "فشل إنشاء حساب المستخدم، يرجى المحاولة مرة أخرى"
+                            }
+                        } catch (e: Exception) {
+                            dbError = "خطأ في إنشاء الحساب عبر Google: ${e.message}"
+                        }
                     }
                 } catch (e: Exception) {
                     dbError = "خطأ في تسجيل الدخول بـ Google: ${e.message}"
@@ -173,7 +195,13 @@ fun AuthScreen(
             }
         } catch (e: ApiException) {
             isGoogleLoading = false
-            dbError = "تم إلغاء تسجيل الدخول بـ Google"
+            dbError = when (e.statusCode) {
+                12501 -> "تم إلغاء تسجيل الدخول بـ Google"
+                10 -> "خطأ في إعداد Google (DEVELOPER_ERROR): تأكد من تسجيل SHA-1 وpackage name في Google Cloud Console"
+                7 -> "لا يوجد اتصال بالإنترنت"
+                12500 -> "فشل تسجيل الدخول بـ Google — تحقق من إعداد OAuth في Google Cloud Console"
+                else -> "فشل تسجيل الدخول بـ Google (كود الخطأ: ${e.statusCode})"
+            }
         }
     }
 
