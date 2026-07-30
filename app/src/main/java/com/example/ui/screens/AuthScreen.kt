@@ -1,7 +1,5 @@
 package com.example.ui.screens
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,7 +26,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import com.example.model.User
 import com.example.service.FirebaseService
 import com.example.service.SupabaseClientProvider
@@ -36,7 +33,6 @@ import com.example.ui.theme.*
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.location.LocationServices
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.gotrue.providers.builtin.IDToken
@@ -48,7 +44,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,33 +57,17 @@ fun AuthScreen(
     var emailInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
 
-    // Signup states
-    var orgName by remember { mutableStateOf("") }
-    var ownerName by remember { mutableStateOf("") }
+    // Signup states — حقول المنشأة انتقلت لشاشة العناوين
     var clientType by remember { mutableStateOf("hospital") }
-    var phoneInput by remember { mutableStateOf("") }
-    var facilityPhone by remember { mutableStateOf("") }
-    var governorate by remember { mutableStateOf("") }
-    var district by remember { mutableStateOf("") }
-    var nearestLandmark by remember { mutableStateOf("") }
-    var latitude by remember { mutableStateOf<Double?>(null) }
-    var longitude by remember { mutableStateOf<Double?>(null) }
     var signupEmail by remember { mutableStateOf("") }
     var signupPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var governorateExpanded by remember { mutableStateOf(false) }
 
     var isProgressing by remember { mutableStateOf(false) }
-    var isLocationLoading by remember { mutableStateOf(false) }
     var dbError by remember { mutableStateOf<String?>(null) }
     var isGoogleLoading by remember { mutableStateOf(false) }
 
     val supabase = SupabaseClientProvider.client
-    val governorates = listOf(
-        "صنعاء", "عدن", "تعز", "الحديدة", "إب", "الضالع", "ذمار", "المهرة", "حضرموت",
-        "حجة", "عمران", "البيضاء", "الجوف", "صعدة", "لحج", "ريمة", "أبين", "مأرب", "سقطرى"
-    )
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     suspend fun fetchUserByUid(uid: String): User? {
         return try {
@@ -221,47 +200,15 @@ fun AuthScreen(
         }
     }
 
-    fun requestCurrentLocation() {
-        val permission = Manifest.permission.ACCESS_FINE_LOCATION
-        if (ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(context, "يرجى منح إذن الموقع لتحديد الموقع الحالي", Toast.LENGTH_SHORT).show()
-            return
-        }
-        isLocationLoading = true
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            isLocationLoading = false
-            if (location != null) {
-                latitude = location.latitude
-                longitude = location.longitude
-                Toast.makeText(context, "تم حفظ الموقع الحالي مؤقتاً", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, "تعذر الحصول على الموقع الحالي", Toast.LENGTH_SHORT).show()
-            }
-        }.addOnFailureListener { e ->
-            isLocationLoading = false
-            Toast.makeText(context, "فشل تحديد الموقع: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    // Email/Password submit
+    // Email/Password submit — مبسّط بعد نقل حقول المنشأة لشاشة العناوين
     fun performAuth() {
         val em = (if (selectedTab == 0) emailInput else signupEmail).trim()
         val pw = if (selectedTab == 0) passwordInput else signupPassword
-        val trimmedOrgName = orgName.trim()
-        val trimmedOwnerName = ownerName.trim()
-        val trimmedFacilityPhone = facilityPhone.trim()
-        val trimmedGovernorate = governorate.trim()
-        val trimmedDistrict = district.trim()
-        val trimmedNearestLandmark = nearestLandmark.trim()
-        val trimmedPhoneInput = phoneInput.trim()
         if (em.isBlank() || pw.isBlank()) {
-            Toast.makeText(context, "الرجاء تعبئة كافة الحقول المطلوبة", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "الرجاء تعبئة البريد الإلكتروني وكلمة المرور", Toast.LENGTH_SHORT).show()
             return
         }
         if (selectedTab == 1) {
-            if (trimmedOrgName.isBlank()) {
-                Toast.makeText(context, "الرجاء إدخال اسم المنشأة", Toast.LENGTH_SHORT).show(); return
-            }
             if (pw.length < 6) {
                 Toast.makeText(context, "كلمة المرور يجب أن تكون 6 أحرف على الأقل", Toast.LENGTH_SHORT).show(); return
             }
@@ -273,38 +220,16 @@ fun AuthScreen(
         MainScope().launch {
             try {
                 if (selectedTab == 0) {
-                    // === LOGIN ===
-                    supabase.auth.signInWith(Email) {
-                        email = em; password = pw
-                    }
+                    supabase.auth.signInWith(Email) { email = em; password = pw }
                     val uid = supabase.auth.currentSessionOrNull()?.user?.id
                     if (uid == null) { dbError = "فشل تسجيل الدخول"; isProgressing = false; return@launch }
                     processAuth(uid, false)
                 } else {
-                    // === SIGNUP ===
-                    val result = supabase.auth.signUpWith(Email) {
+                    supabase.auth.signUpWith(Email) {
                         email = em; password = pw
                         data = buildJsonObject {
                             put("role", "client")
-                            put("org_name", trimmedOrgName)
-                            put("owner_name", trimmedOwnerName)
                             put("client_type", clientType)
-                            put("phone", trimmedPhoneInput)
-                            put("facility_phone", trimmedFacilityPhone)
-                            put("governorate", trimmedGovernorate)
-                            put("district", trimmedDistrict)
-                            put("nearest_landmark", trimmedNearestLandmark)
-                            put("latitude", latitude ?: 0.0)
-                            put("longitude", longitude ?: 0.0)
-                            putJsonObject("facility_info") {
-                                put("type", clientType)
-                                put("name", trimmedOrgName)
-                                put("owner_name", trimmedOwnerName)
-                                put("facility_phone", trimmedFacilityPhone)
-                                put("governorate", trimmedGovernorate)
-                                put("district", trimmedDistrict)
-                                put("nearest_landmark", trimmedNearestLandmark)
-                            }
                         }
                     }
                     val session = supabase.auth.currentSessionOrNull()
@@ -409,7 +334,26 @@ fun AuthScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (selectedTab == 1) {
-                    // Client type selector
+                    // نوع المنشأة فقط — باقي البيانات تُكمل في شاشة العناوين
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F9FF)),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("💡", fontSize = 16.sp)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "بعد التسجيل ستُكمل بيانات منشأتك وعنوانها في الخطوة التالية",
+                                fontSize = 11.sp,
+                                color = Color(0xFF0369A1),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
                     Text("حدد نوع منشأتك:", color = OnSurfaceDark, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         listOf("hospital" to "🏥 مستشفى أو مركز", "pharmacy" to "💊 صيدلية أو مستودع").forEach { (type, label) ->
@@ -428,112 +372,6 @@ fun AuthScreen(
                             }
                         }
                     }
-
-                    // Org Name
-                    OutlinedTextField(
-                        value = orgName, onValueChange = { orgName = it },
-                        label = { Text("اسم المنشأة") },
-                        leadingIcon = { Icon(Icons.Default.Business, null, tint = TextSecondaryGray) },
-                        modifier = Modifier.fillMaxWidth().testTag("auth_org_name"),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
-                        singleLine = true
-                    )
-
-                    // Owner Name
-                    OutlinedTextField(
-                        value = ownerName, onValueChange = { ownerName = it },
-                        label = { Text("اسم صاحب/مديرة المنشأة") },
-                        leadingIcon = { Icon(Icons.Default.Person, null, tint = TextSecondaryGray) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
-                        singleLine = true
-                    )
-
-                    // Facility Phone
-                    OutlinedTextField(
-                        value = facilityPhone, onValueChange = { facilityPhone = it },
-                        label = { Text("هاتف المنشأة") },
-                        leadingIcon = { Icon(Icons.Default.Phone, null, tint = TextSecondaryGray) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
-                        singleLine = true
-                    )
-
-                    // Governorate Dropdown
-                    ExposedDropdownMenuBox(
-                        expanded = governorateExpanded,
-                        onExpandedChange = { governorateExpanded = it }
-                    ) {
-                        OutlinedTextField(
-                            value = governorate,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("المحافظة") },
-                            leadingIcon = { Icon(Icons.Default.LocationCity, null, tint = TextSecondaryGray) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = governorateExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor(),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
-                            singleLine = true
-                        )
-                        ExposedDropdownMenu(
-                            expanded = governorateExpanded,
-                            onDismissRequest = { governorateExpanded = false }
-                        ) {
-                            governorates.forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option) },
-                                    onClick = {
-                                        governorate = option
-                                        governorateExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    // District
-                    OutlinedTextField(
-                        value = district, onValueChange = { district = it },
-                        label = { Text("المديرية") },
-                        leadingIcon = { Icon(Icons.Default.Map, null, tint = TextSecondaryGray) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
-                        singleLine = true
-                    )
-
-                    // Landmark
-                    OutlinedTextField(
-                        value = nearestLandmark, onValueChange = { nearestLandmark = it },
-                        label = { Text("الحي أو أقرب معلم") },
-                        leadingIcon = { Icon(Icons.Default.Place, null, tint = TextSecondaryGray) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
-                        singleLine = true
-                    )
-
-                    Button(
-                        onClick = { requestCurrentLocation() },
-                        enabled = !isLocationLoading,
-                        colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = OnBrandPrimary),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (isLocationLoading) {
-                            CircularProgressIndicator(color = OnBrandPrimary, modifier = Modifier.size(20.dp))
-                        } else {
-                            Text("📍 تحديد الموقع الجغرافي الحالي", fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    // Personal Phone
-                    OutlinedTextField(
-                        value = phoneInput, onValueChange = { phoneInput = it },
-                        label = { Text("رقم الهاتف") },
-                        leadingIcon = { Icon(Icons.Default.Phone, null, tint = TextSecondaryGray) },
-                        modifier = Modifier.fillMaxWidth().testTag("auth_phone"),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BrandPrimary, focusedLabelColor = BrandPrimary),
-                        singleLine = true
-                    )
                 }
 
                 // Email

@@ -291,6 +291,32 @@ object FirebaseService {
         }
     }
 
+    fun updateUserProfile(
+        userId: String,
+        orgName: String,
+        ownerName: String,
+        phone: String,
+        governorate: String,
+        onResult: (Boolean) -> Unit = {}
+    ) {
+        scope.launch {
+            try {
+                SupabaseClientProvider.client.postgrest["users"].update(
+                    buildJsonObject {
+                        if (orgName.isNotBlank()) put("org_name", orgName)
+                        if (ownerName.isNotBlank()) put("name", ownerName)
+                        if (phone.isNotBlank()) put("phone", phone)
+                        if (governorate.isNotBlank()) put("governorate", governorate)
+                    }
+                ) { filter { eq("id", userId) } }
+                withContext(Dispatchers.Main) { onResult(true) }
+            } catch (e: Exception) {
+                Log.e("SUPABASE_DEBUG", "updateUserProfile failed: ${e.message}")
+                withContext(Dispatchers.Main) { onResult(false) }
+            }
+        }
+    }
+
     fun deleteUserAddress(addressId: String, onResult: (Boolean) -> Unit) {
         scope.launch {
             try {

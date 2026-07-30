@@ -50,8 +50,10 @@ fun AddAddressScreen(
     // Form inputs state
     var label by remember { mutableStateOf(existingAddress?.label ?: "") }
     var orgName by remember { mutableStateOf(existingAddress?.hospitalOrCompanyName ?: currentUser.orgName) }
+    var ownerName by remember { mutableStateOf(currentUser.name) }
+    var facilityPhone by remember { mutableStateOf(currentUser.phone) }
     var landmark by remember { mutableStateOf(existingAddress?.nearbyLandmark ?: "") }
-    var selectedGovernorate by remember { mutableStateOf(existingAddress?.governorate ?: "صنعاء") }
+    var selectedGovernorate by remember { mutableStateOf(existingAddress?.governorate ?: currentUser.governorate.ifBlank { "صنعاء" }) }
     var district by remember { mutableStateOf(existingAddress?.district ?: "") }
     var neighborhood by remember { mutableStateOf(existingAddress?.neighborhood ?: "") }
     var isDefault by remember { mutableStateOf(existingAddress?.isDefault ?: false) }
@@ -61,8 +63,10 @@ fun AddAddressScreen(
     var longitude by remember { mutableStateOf(existingAddress?.longitude ?: 44.2191) }
     var isManualMapSelection by remember { mutableStateOf(false) }
 
-    // List of governorates in Yemen
-    val governorates = emptyList<String>()
+    val governorates = listOf(
+        "صنعاء", "عدن", "تعز", "الحديدة", "إب", "الضالع", "ذمار", "المهرة", "حضرموت",
+        "حجة", "عمران", "البيضاء", "الجوف", "صعدة", "لحج", "ريمة", "أبين", "مأرب", "سقطرى"
+    )
     var govExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -132,26 +136,53 @@ fun AddAddressScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+                    Text("🏥 بيانات المنشأة", fontWeight = FontWeight.Bold, color = Color.DarkGray, fontSize = 14.sp)
+
+                    // Org Name
+                    OutlinedTextField(
+                        value = orgName,
+                        onValueChange = { orgName = it },
+                        label = { Text("اسم المنشأة (مستشفى، صيدلية، مستودع...)") },
+                        modifier = Modifier.fillMaxWidth().testTag("address_org_input"),
+                        leadingIcon = { Icon(Icons.Default.Business, contentDescription = null, tint = MedBluePrimary) },
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MedBluePrimary),
+                        singleLine = true
+                    )
+
+                    // Owner Name
+                    OutlinedTextField(
+                        value = ownerName,
+                        onValueChange = { ownerName = it },
+                        label = { Text("اسم صاحب/مدير المنشأة") },
+                        modifier = Modifier.fillMaxWidth().testTag("address_owner_input"),
+                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = MedBluePrimary) },
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MedBluePrimary),
+                        singleLine = true
+                    )
+
+                    // Facility Phone
+                    OutlinedTextField(
+                        value = facilityPhone,
+                        onValueChange = { facilityPhone = it },
+                        label = { Text("رقم هاتف المنشأة") },
+                        modifier = Modifier.fillMaxWidth().testTag("address_facility_phone_input"),
+                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = MedBluePrimary) },
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MedBluePrimary),
+                        singleLine = true
+                    )
+
+                    Divider(color = Color(0xFFF1F5F9), thickness = 1.dp)
                     Text("📍 تفاصيل العنوان", fontWeight = FontWeight.Bold, color = Color.DarkGray, fontSize = 14.sp)
 
-                    // Label (e.g. المقر الرئيسي)
+                    // Label
                     OutlinedTextField(
                         value = label,
                         onValueChange = { label = it },
                         label = { Text("اسم العنوان (مثال: المقر الرئيسي، المخزن رقم 2)") },
                         modifier = Modifier.fillMaxWidth().testTag("address_label_input"),
                         leadingIcon = { Icon(Icons.Default.Label, contentDescription = null, tint = MedBluePrimary) },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MedBluePrimary)
-                    )
-
-                    // Hospital or Company Name
-                    OutlinedTextField(
-                        value = orgName,
-                        onValueChange = { orgName = it },
-                        label = { Text("اسم المستشفى أو الشركة") },
-                        modifier = Modifier.fillMaxWidth().testTag("address_org_input"),
-                        leadingIcon = { Icon(Icons.Default.Business, contentDescription = null, tint = MedBluePrimary) },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MedBluePrimary)
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MedBluePrimary),
+                        singleLine = true
                     )
 
                     // Nearest Landmark
@@ -432,8 +463,12 @@ fun AddAddressScreen(
             // Save Button
             Button(
                 onClick = {
-                    if (label.isBlank() || orgName.isBlank() || district.isBlank()) {
-                        Toast.makeText(context, "الرجاء تعبئة الحقول الأساسية: اسم العنوان، المستشفى، والمديرية ⚠️", Toast.LENGTH_LONG).show()
+                    if (orgName.isBlank()) {
+                        Toast.makeText(context, "الرجاء إدخال اسم المنشأة ⚠️", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    if (label.isBlank() || district.isBlank()) {
+                        Toast.makeText(context, "الرجاء تعبئة اسم العنوان والمديرية ⚠️", Toast.LENGTH_LONG).show()
                         return@Button
                     }
 
@@ -453,6 +488,15 @@ fun AddAddressScreen(
                         longitude = longitude,
                         isDefault = isDefault
                     )
+
+                    // حدِّث بيانات المستخدم (اسم المنشأة، المالك، الهاتف) في جدول users
+                    FirebaseService.updateUserProfile(
+                        userId = currentUser.userId,
+                        orgName = orgName,
+                        ownerName = ownerName,
+                        phone = facilityPhone,
+                        governorate = selectedGovernorate
+                    ) { /* تجاهل الخطأ — العنوان هو الأهم */ }
 
                     if (existingAddress != null) {
                         FirebaseService.updateUserAddress(targetAddress) { success ->

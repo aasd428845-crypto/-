@@ -69,11 +69,35 @@ fun MainAppContainer() {
         refreshCurrentUserData()
     }
 
-    if (userLoggedIn == null) {
+    // حالة المستخدم الجديد — يحتاج إضافة عنوان
+    var pendingNewUser by remember { mutableStateOf<User?>(null) }
+
+    if (pendingNewUser != null) {
+        // مستخدم جديد → شاشة إضافة العنوان الأول مباشرة
+        AddAddressScreen(
+            currentUser = pendingNewUser!!,
+            existingAddress = null,
+            onBackClick = {
+                // تخطي إضافة العنوان والدخول للتطبيق
+                userLoggedIn = pendingNewUser
+                pendingNewUser = null
+                currentScreenState = "dashboard"
+            },
+            onSaveSuccess = {
+                userLoggedIn = pendingNewUser
+                pendingNewUser = null
+                currentScreenState = "dashboard"
+            }
+        )
+    } else if (userLoggedIn == null) {
         AuthScreen(
             onAuthSuccess = { user, isNewUser ->
-                userLoggedIn = user
-                currentScreenState = "dashboard"
+                if (isNewUser && user.role == "client") {
+                    pendingNewUser = user
+                } else {
+                    userLoggedIn = user
+                    currentScreenState = "dashboard"
+                }
             }
         )
     } else {
