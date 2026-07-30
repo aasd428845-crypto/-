@@ -45,6 +45,9 @@ import com.example.utils.ReorderSuggestion
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
@@ -351,38 +354,312 @@ fun ClientScreen(
                             when (tab) {
                                 "new_order" -> {
                                     LazyColumn(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
+                                        modifier = Modifier.fillMaxSize(),
+                                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                                        contentPadding = PaddingValues(bottom = 24.dp)
                                     ) {
-                                        // High impact welcome hero banner
+                                        // ══════════════════════════════════════
+                                        // HERO — gradient dark blue header
+                                        // ══════════════════════════════════════
                                         item {
-                                            Card(
-                                                colors = CardDefaults.cardColors(containerColor = MedBluePrimary, contentColor = Color.White),
-                                                shape = RoundedCornerShape(16.dp),
-                                                modifier = Modifier.fillMaxWidth()
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .background(
+                                                        Brush.verticalGradient(
+                                                            colors = listOf(
+                                                                Color(0xFF0F2D6B),
+                                                                Color(0xFF1E4DB7),
+                                                                Color(0xFF2563EB)
+                                                            )
+                                                        )
+                                                    )
+                                                    .padding(horizontal = 20.dp, vertical = 24.dp)
                                             ) {
-                                                Column(
-                                                    modifier = Modifier.padding(20.dp),
-                                                    horizontalAlignment = Alignment.End
-                                                ) {
+                                                // Decorative circles
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(120.dp)
+                                                        .align(Alignment.TopStart)
+                                                        .offset(x = (-40).dp, y = (-40).dp)
+                                                        .background(Color.White.copy(alpha = 0.04f), CircleShape)
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(80.dp)
+                                                        .align(Alignment.BottomEnd)
+                                                        .offset(x = 20.dp, y = 20.dp)
+                                                        .background(Color.White.copy(alpha = 0.06f), CircleShape)
+                                                )
+
+                                                Column(horizontalAlignment = Alignment.End) {
+                                                    // Greeting chip
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+                                                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                                                    ) {
+                                                        Text(
+                                                            "مرحباً، ${currentUser.orgName.ifBlank { "عميل" }}",
+                                                            color = Color.White,
+                                                            fontSize = 11.sp,
+                                                            fontWeight = FontWeight.SemiBold
+                                                        )
+                                                    }
+                                                    Spacer(Modifier.height(10.dp))
                                                     Text(
-                                                        "بوابة الشفاء للإمداد الدوائي الذكي 🏥",
+                                                        "بوابة الإمداد الدوائي الذكي",
                                                         color = Color.White,
                                                         fontWeight = FontWeight.ExtraBold,
-                                                        fontSize = 18.sp,
+                                                        fontSize = 22.sp,
                                                         textAlign = TextAlign.Right
                                                     )
-                                                    Spacer(modifier = Modifier.height(4.dp))
+                                                    Spacer(Modifier.height(6.dp))
                                                     Text(
-                                                        "تحكم بكافة طلبيات منشأتك الصحية وتواصل مباشرة مع فروع المجموعة لضمان أفضل عروض الأسعار وتبريد الأدوية.",
-                                                        color = Color.LightGray,
+                                                        "اطلب من الكتالوج أو أرسل طلباً خاصاً لتأمين احتياجاتك الدوائية مباشرة من فروع الشفاء.",
+                                                        color = Color.White.copy(alpha = 0.80f),
                                                         fontSize = 12.sp,
                                                         textAlign = TextAlign.Right,
-                                                        lineHeight = 20.sp
+                                                        lineHeight = 19.sp
                                                     )
+                                                    Spacer(Modifier.height(16.dp))
+                                                    // Quick stats row
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                                                    ) {
+                                                        // Cart count chip
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
+                                                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                                                        ) {
+                                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                                                Text("🛒", fontSize = 12.sp)
+                                                                Text(
+                                                                    "${cartItems.sumOf { it.quantity }} في السلة",
+                                                                    color = Color.White,
+                                                                    fontSize = 11.sp,
+                                                                    fontWeight = FontWeight.Bold
+                                                                )
+                                                            }
+                                                        }
+                                                        // Orders count chip
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
+                                                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                                                        ) {
+                                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                                                Text("📦", fontSize = 12.sp)
+                                                                Text(
+                                                                    "${myOrders.size} طلب نشط",
+                                                                    color = Color.White,
+                                                                    fontSize = 11.sp,
+                                                                    fontWeight = FontWeight.Bold
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        // ══════════════════════════════════════
+                                        // MAIN ACTIONS SECTION
+                                        // ══════════════════════════════════════
+                                        item {
+                                            Column(
+                                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
+                                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                            ) {
+                                                Text(
+                                                    "ماذا تريد أن تفعل؟",
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    fontSize = 16.sp,
+                                                    color = OnSurfaceDark,
+                                                    textAlign = TextAlign.Right,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                )
+                                                Spacer(Modifier.height(4.dp))
+
+                                                // ── بطاقة الكتالوج الرئيسية ──────────────
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .shadow(6.dp, RoundedCornerShape(20.dp))
+                                                        .clip(RoundedCornerShape(20.dp))
+                                                        .background(
+                                                            Brush.linearGradient(
+                                                                colors = listOf(Color(0xFF0F52BA), Color(0xFF2563EB), Color(0xFF38BDF8))
+                                                            )
+                                                        )
+                                                        .clickable { clientScreenState = "new_order_flow" }
+                                                        .testTag("launcher_catalog_btn")
+                                                        .padding(20.dp)
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.SpaceBetween
+                                                    ) {
+                                                        // Left: icon + arrow
+                                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(52.dp)
+                                                                    .background(Color.White.copy(alpha = 0.18f), CircleShape),
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                Text("💊", fontSize = 26.sp)
+                                                            }
+                                                            Spacer(Modifier.height(8.dp))
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .background(Color.White.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
+                                                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                                                            ) {
+                                                                Text("تصفح الآن", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                            }
+                                                        }
+
+                                                        // Right: text
+                                                        Column(
+                                                            modifier = Modifier.weight(1f).padding(start = 16.dp),
+                                                            horizontalAlignment = Alignment.End
+                                                        ) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .background(Color(0xFF22D3EE).copy(alpha = 0.25f), RoundedCornerShape(8.dp))
+                                                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                                                            ) {
+                                                                Text("الأكثر استخداماً", color = Color(0xFFBAE6FD), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                                            }
+                                                            Spacer(Modifier.height(6.dp))
+                                                            Text(
+                                                                "تصفح كتالوج الأدوية",
+                                                                color = Color.White,
+                                                                fontWeight = FontWeight.ExtraBold,
+                                                                fontSize = 17.sp,
+                                                                textAlign = TextAlign.Right
+                                                            )
+                                                            Spacer(Modifier.height(4.dp))
+                                                            Text(
+                                                                "استعرض جميع الأصناف المتوفرة، أضف ما تحتاجه للسلة وأرسل طلبك في ثوانٍ.",
+                                                                color = Color.White.copy(alpha = 0.85f),
+                                                                fontSize = 11.sp,
+                                                                textAlign = TextAlign.Right,
+                                                                lineHeight = 16.sp
+                                                            )
+                                                        }
+                                                    }
+                                                }
+
+                                                // ── بطاقتان صغيرتان في صف ─────────────────
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                ) {
+                                                    // بطاقة طلب خاص
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .weight(1f)
+                                                            .shadow(3.dp, RoundedCornerShape(16.dp))
+                                                            .clip(RoundedCornerShape(16.dp))
+                                                            .background(Color.White)
+                                                            .clickable { clientScreenState = "special_item_request" }
+                                                            .testTag("launcher_new_order_btn")
+                                                            .padding(16.dp)
+                                                    ) {
+                                                        Column(horizontalAlignment = Alignment.End) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(44.dp)
+                                                                    .background(Color(0xFFF0F9FF), CircleShape),
+                                                                contentAlignment = Alignment.Center
+                                                            ) { Text("📋", fontSize = 20.sp) }
+                                                            Spacer(Modifier.height(10.dp))
+                                                            Text(
+                                                                "طلب خاص",
+                                                                fontWeight = FontWeight.ExtraBold,
+                                                                fontSize = 13.sp,
+                                                                color = OnSurfaceDark,
+                                                                textAlign = TextAlign.Right
+                                                            )
+                                                            Spacer(Modifier.height(3.dp))
+                                                            Text(
+                                                                "صنف غير متوفر بالكتالوج أو نادر",
+                                                                fontSize = 10.sp,
+                                                                color = TextSecondaryGray,
+                                                                textAlign = TextAlign.Right,
+                                                                lineHeight = 14.sp
+                                                            )
+                                                            Spacer(Modifier.height(10.dp))
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .background(BrandPrimary.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
+                                                                    .padding(vertical = 6.dp),
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                Text("إرسال طلب", color = BrandPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                            }
+                                                        }
+                                                    }
+
+                                                    // بطاقة السلة
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .weight(1f)
+                                                            .shadow(3.dp, RoundedCornerShape(16.dp))
+                                                            .clip(RoundedCornerShape(16.dp))
+                                                            .background(Color.White)
+                                                            .clickable { clientScreenState = "cart" }
+                                                            .padding(16.dp)
+                                                    ) {
+                                                        Column(horizontalAlignment = Alignment.End) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(44.dp)
+                                                                    .background(Color(0xFFF0FFF4), CircleShape),
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                BadgedBox(badge = {
+                                                                    if (cartItems.isNotEmpty()) Badge(containerColor = MedGreenPrimary) {
+                                                                        Text(cartItems.sumOf { it.quantity }.toString(), fontSize = 8.sp)
+                                                                    }
+                                                                }) { Text("🛒", fontSize = 20.sp) }
+                                                            }
+                                                            Spacer(Modifier.height(10.dp))
+                                                            Text(
+                                                                "سلتي",
+                                                                fontWeight = FontWeight.ExtraBold,
+                                                                fontSize = 13.sp,
+                                                                color = OnSurfaceDark,
+                                                                textAlign = TextAlign.Right
+                                                            )
+                                                            Spacer(Modifier.height(3.dp))
+                                                            Text(
+                                                                if (cartItems.isEmpty()) "السلة فارغة حالياً"
+                                                                else "${cartItems.sumOf { it.quantity }} صنف جاهز للإرسال",
+                                                                fontSize = 10.sp,
+                                                                color = if (cartItems.isEmpty()) TextSecondaryGray else MedGreenPrimary,
+                                                                textAlign = TextAlign.Right,
+                                                                lineHeight = 14.sp,
+                                                                fontWeight = if (cartItems.isEmpty()) FontWeight.Normal else FontWeight.SemiBold
+                                                            )
+                                                            Spacer(Modifier.height(10.dp))
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .background(MedGreenPrimary.copy(alpha = 0.09f), RoundedCornerShape(8.dp))
+                                                                    .padding(vertical = 6.dp),
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                Text("عرض السلة", color = MedGreenPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -390,41 +667,44 @@ fun ClientScreen(
                                         if (activePromotions.isNotEmpty()) {
                                             item {
                                                 Column(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalAlignment = Alignment.Start
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 16.dp),
+                                                    horizontalAlignment = Alignment.End
                                                 ) {
+                                                    // Section header
                                                     Row(
                                                         modifier = Modifier.fillMaxWidth(),
                                                         horizontalArrangement = Arrangement.SpaceBetween,
                                                         verticalAlignment = Alignment.CenterVertically
                                                     ) {
-                                                        Text(
-                                                            text = "📣 عروض ترويجية حصرية وحملات خصم",
-                                                            fontSize = 14.sp,
-                                                            fontWeight = FontWeight.Bold,
-                                                            color = OnSurfaceDark
-                                                        )
                                                         Box(
                                                             modifier = Modifier
-                                                                .background(WarningAmber.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
-                                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                                .background(WarningAmber.copy(alpha = 0.12f), RoundedCornerShape(20.dp))
+                                                                .padding(horizontal = 10.dp, vertical = 4.dp)
                                                         ) {
                                                             Text(
-                                                                text = "مباشر من المندوب",
+                                                                "مباشر من المندوب",
                                                                 color = WarningAmber,
                                                                 fontSize = 10.sp,
                                                                 fontWeight = FontWeight.Bold
                                                             )
                                                         }
+                                                        Text(
+                                                            "🔥 عروض وخصومات حصرية",
+                                                            fontSize = 15.sp,
+                                                            fontWeight = FontWeight.ExtraBold,
+                                                            color = OnSurfaceDark
+                                                        )
                                                     }
                                                     Spacer(modifier = Modifier.height(4.dp))
                                                     Text(
-                                                        text = "وفر الآن مع أسعار مخفضة وخصومات مباشرة من فروع الشفاء لطلبك القادم:",
+                                                        "وفر مع أسعار مخفضة مباشرة من فروع الشفاء:",
                                                         fontSize = 11.sp,
                                                         color = TextSecondaryGray,
                                                         textAlign = TextAlign.Right
-                                                     )
-                                                    Spacer(modifier = Modifier.height(10.dp))
+                                                    )
+                                                    Spacer(modifier = Modifier.height(12.dp))
                                                     LazyRow(
                                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                                                         contentPadding = PaddingValues(vertical = 4.dp)
@@ -607,57 +887,6 @@ fun ClientScreen(
                                             }
                                         }
 
-                                        // Stacked high fidelity action triggers
-                                        item {
-                                            Card(
-                                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                                shape = RoundedCornerShape(12.dp),
-                                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .clickable { clientScreenState = "special_item_request" }
-                                                    .testTag("launcher_new_order_btn")
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(20.dp),
-                                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Icon(
-                                                        Icons.Default.ArrowBackIos,
-                                                        contentDescription = null,
-                                                        tint = MedBluePrimary,
-                                                        modifier = Modifier.size(16.dp)
-                                                    )
-
-                                                    Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                                                        Text(
-                                                            "طلب خاص لصنف غير متوفر بالكتالوج (نادر الاستخدام)",
-                                                            color = MedBluePrimary,
-                                                            fontWeight = FontWeight.Bold,
-                                                            fontSize = 12.sp
-                                                        )
-                                                        Text(
-                                                            "أرسل طلب شراء دوائي خاص مع تفاصيل إضافية لإمشاركتنا في تأمينها.",
-                                                            color = Color.Gray,
-                                                            fontSize = 10.sp,
-                                                            textAlign = TextAlign.Right
-                                                        )
-                                                    }
-
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(44.dp)
-                                                            .background(MedBluePrimary.copy(alpha = 0.1f), CircleShape),
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        Icon(Icons.Default.AddShoppingCart, contentDescription = null, tint = MedBluePrimary)
-                                                    }
-                                                }
-                                            }
-                                        }
                                     }
                                 }
 
