@@ -105,7 +105,7 @@ data class UserAddress(
     @SerialName("hospital_or_company_name") val hospitalOrCompanyName: String = "",
     @SerialName("nearby_landmark") val nearbyLandmark: String = "", // معلم بارز
     val governorate: String = "", // المحافظة
-    val district: String = "", // المديرية
+    @kotlinx.serialization.Transient val district: String = "", // المديرية — محفوظة ضمن fullAddress، غير موجودة كعمود مستقل في DB
     val neighborhood: String = "", // الحي
     @SerialName("full_address") val fullAddress: String = "",
     val latitude: Double = 15.3482,
