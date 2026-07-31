@@ -214,10 +214,39 @@ fun MainAppContainer() {
                 }
             }
             "client" -> {
-                ClientScreen(
-                    currentUser = loggedUser,
-                    onLogout = { performLogout() }
-                )
+                var clientProfileState by remember { mutableStateOf<ClientProfile?>(null) }
+                var profileCheckDone by remember { mutableStateOf(false) }
+
+                LaunchedEffect(loggedUser.userId) {
+                    FirebaseService.getClientProfile(loggedUser.userId) { profile ->
+                        clientProfileState = profile
+                        profileCheckDone = true
+                    }
+                }
+
+                when {
+                    !profileCheckDone -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = MedBluePrimary)
+                        }
+                    }
+                    clientProfileState == null || clientProfileState?.profileCompleted != true -> {
+                        ClientProfileSetupScreen(
+                            userId = loggedUser.userId,
+                            onSetupCompleted = {
+                                FirebaseService.getClientProfile(loggedUser.userId) { updatedProfile ->
+                                    clientProfileState = updatedProfile
+                                }
+                            }
+                        )
+                    }
+                    else -> {
+                        ClientScreen(
+                            currentUser = loggedUser,
+                            onLogout = { performLogout() }
+                        )
+                    }
+                }
             }
             else -> {
                 ClientScreen(
