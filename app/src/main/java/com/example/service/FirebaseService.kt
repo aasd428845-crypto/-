@@ -155,7 +155,7 @@ object FirebaseService {
     }
 
     fun saveAddress(address: UserAddress, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
-        val id = if (address.addressId.isEmpty()) "addr_" + System.currentTimeMillis() else address.addressId
+        val id = if (address.addressId.isEmpty()) java.util.UUID.randomUUID().toString() else address.addressId
         val finalAddr = address.copy(addressId = id, createdAt = System.currentTimeMillis())
 
         scope.launch {
@@ -224,7 +224,7 @@ object FirebaseService {
     }
 
     fun addUserAddress(address: UserAddress, onResult: (Boolean, String?) -> Unit) {
-        val id = if (address.addressId.isEmpty()) "addr_" + System.currentTimeMillis() else address.addressId
+        val id = if (address.addressId.isEmpty()) java.util.UUID.randomUUID().toString() else address.addressId
         val finalAddr = address.copy(addressId = id, createdAt = System.currentTimeMillis())
 
         scope.launch {
@@ -844,7 +844,7 @@ object FirebaseService {
 
     fun submitOrder(order: Order, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         val finalOrder = order.copy(
-            orderId = if (order.orderId.isEmpty()) "order_" + System.currentTimeMillis() else order.orderId,
+            orderId = if (order.orderId.isEmpty()) java.util.UUID.randomUUID().toString() else order.orderId,
             createdAt = if (order.createdAt == 0L) System.currentTimeMillis() else order.createdAt
         )
         scope.launch {
@@ -903,7 +903,7 @@ object FirebaseService {
 
     fun submitBranchOffer(offer: BranchOffer, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         val finalOffer = offer.copy(
-            offerId = if (offer.offerId.isEmpty()) "offer_" + System.currentTimeMillis() else offer.offerId,
+            offerId = if (offer.offerId.isEmpty()) java.util.UUID.randomUUID().toString() else offer.offerId,
             createdAt = if (offer.createdAt == 0L) System.currentTimeMillis() else offer.createdAt
         )
         scope.launch {
@@ -1220,7 +1220,7 @@ object FirebaseService {
 
                 val targetBranchIds = routedBranches.map { it.branchId }
                 val finalOrder = order.copy(
-                    orderId = if (order.orderId.isEmpty()) "order_" + System.currentTimeMillis() else order.orderId,
+                    orderId = if (order.orderId.isEmpty()) java.util.UUID.randomUUID().toString() else order.orderId,
                     targetBranches = targetBranchIds,
                     status = "broadcast",
                     createdAt = System.currentTimeMillis()
@@ -1744,7 +1744,7 @@ object FirebaseService {
     // --- Promotional Offers ---
     fun createOffer(offer: PromotionalOffer, onResult: (Boolean) -> Unit) {
         val finalOffer = if (offer.offerId.isBlank()) {
-            offer.copy(offerId = "offer_" + System.currentTimeMillis())
+            offer.copy(offerId = java.util.UUID.randomUUID().toString())
         } else {
             offer
         }
