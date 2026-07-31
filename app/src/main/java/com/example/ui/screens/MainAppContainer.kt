@@ -27,18 +27,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.*
 import com.example.service.FirebaseService
+import com.example.service.SupabaseClientProvider
 import com.example.ui.theme.MedBluePrimary
 import com.example.ui.theme.MedGreenPrimary
 import com.example.ui.theme.MedRedPrimary
 import com.example.ui.screens.AuthScreen
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.gotrue.auth
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppContainer() {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     // Session States
     var userLoggedIn by remember { mutableStateOf<User?>(null) }
+    var isSessionChecking by remember { mutableStateOf(true) }
     var currentScreenState by remember { mutableStateOf("login") } // "login", "dashboard", "add_address", "delivery_method", "payment", "bank_accounts", "schedules"
     var directorScreenState by remember { mutableStateOf("dashboard") } // "dashboard", "catalog_management"
 
@@ -53,6 +59,57 @@ fun MainAppContainer() {
 
     // Dialog state for fast testing instructions
     var showExplanationHelper by remember { mutableStateOf(true) }
+
+    // ── استعادة الجلسة عند بدء التطبيق ──────────────────────────────────────
+    LaunchedEffect(Unit) {
+        try {
+            val session = SupabaseClientProvider.client.auth.currentSessionOrNull()
+            if (session != null) {
+                val uid = session.user?.id
+                if (uid != null) {
+                    try {
+                        val user = SupabaseClientProvider.client.postgrest["users"]
+                            .select { filter { eq("id", uid) } }
+                            .decodeSingleOrNull<User>()
+                        if (user != null) {
+                            FirebaseService.currentUserSession = user
+                            userLoggedIn = user
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("SUPABASE_DEBUG", "Session restore failed: ${e.message}")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SUPABASE_DEBUG", "currentSessionOrNull failed: ${e.message}")
+        } finally {
+            isSessionChecking = false
+        }
+    }
+
+    // مؤشر تحميل أثناء التحقق من الجلسة
+    if (isSessionChecking) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = MedBluePrimary)
+        }
+        return
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // دالة تسجيل الخروج الكاملة (تمسح الجلسة من Supabase وتصفّر الحالة المحلية)
+    fun performLogout() {
+        coroutineScope.launch {
+            try {
+                SupabaseClientProvider.client.auth.signOut()
+            } catch (e: Exception) {
+                android.util.Log.e("SUPABASE_DEBUG", "signOut failed: ${e.message}")
+            } finally {
+                FirebaseService.currentUserSession = null
+                userLoggedIn = null
+                directorScreenState = "dashboard"
+            }
+        }
+    }
 
     // Fetch and populate database arrays
     fun refreshCurrentUserData() {
@@ -121,10 +178,7 @@ fun MainAppContainer() {
                     else -> {
                         DirectorDashboardScreen(
                             currentUser = loggedUser,
-                            onLogout = {
-                                directorScreenState = "dashboard"
-                                userLoggedIn = null
-                            },
+                            onLogout = { performLogout() },
                             onNavigateToCatalog = { directorScreenState = "catalog_management" },
                             onNavigateToCrossBranchInventory = { directorScreenState = "cross_branch_inventory" }
                         )
@@ -155,20 +209,20 @@ fun MainAppContainer() {
                 } else {
                     BranchManagerScreen(
                         currentUser = loggedUser,
-                        onLogout = { userLoggedIn = null }
+                        onLogout = { performLogout() }
                     )
                 }
             }
             "client" -> {
                 ClientScreen(
                     currentUser = loggedUser,
-                    onLogout = { userLoggedIn = null }
+                    onLogout = { performLogout() }
                 )
             }
             else -> {
                 ClientScreen(
                     currentUser = loggedUser,
-                    onLogout = { userLoggedIn = null }
+                    onLogout = { performLogout() }
                 )
             }
         }
