@@ -111,7 +111,7 @@ data class UserAddress(
     val latitude: Double = 15.3482,
     val longitude: Double = 44.2191,
     @SerialName("is_default") val isDefault: Boolean = false,
-    @SerialName("created_at") val createdAt: Long = 0L
+    @kotlinx.serialization.Transient val createdAt: Long = 0L // Supabase تضبط created_at تلقائياً (TIMESTAMPTZ)، نتجنب تعارض الأنواع
 )
 
 
