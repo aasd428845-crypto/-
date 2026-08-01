@@ -193,7 +193,7 @@ fun DeliveryMethodScreen(
                         Button(
                             onClick = {
                                 val quickAddr = UserAddress(
-                                    addressId = "addr_quick_1",
+                                    addressId = "",
                                     userId = currentUser.userId,
                                     userType = currentUser.role,
                                     label = "المقر المالي الحالي",
@@ -207,9 +207,9 @@ fun DeliveryMethodScreen(
                                     longitude = 44.2191,
                                     isDefault = true
                                 )
-                                FirebaseService.saveAddress(quickAddr, {
-                                    loadAddresses()
-                                }, {})
+                                FirebaseService.saveAddress(quickAddr) { success, _ ->
+                                    if (success) loadAddresses()
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
                             modifier = Modifier.align(Alignment.CenterHorizontally),

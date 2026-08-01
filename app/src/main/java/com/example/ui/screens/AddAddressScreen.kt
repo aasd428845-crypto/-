@@ -512,7 +512,7 @@ fun AddAddressScreen(
                             if (success) {
                                 if (currentUser.role == "branch_manager") {
                                     val notification = DirectorNotification(
-                                        notificationId = "notif_" + System.currentTimeMillis(),
+                                        notificationId = java.util.UUID.randomUUID().toString(),
                                         title = "إضافة موقع مستودع/فرع جديد",
                                         message = "قام مدير الفرع ${currentUser.name} بإضافة موقع جديد: ${targetAddress.label} - ${targetAddress.fullAddress}",
                                         orderId = "",

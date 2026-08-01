@@ -213,8 +213,10 @@ fun BranchAddressesScreen(
                                                     lat = address.latitude,
                                                     lng = address.longitude,
                                                     managerPhone = currentUser.phone
-                                                ) { _ ->
-                                                    Toast.makeText(context, "تم تعيين هذا العنوان كافتراضي للمستودعات", Toast.LENGTH_SHORT).show()
+                                                ) { branchUpdated ->
+                                                    if (branchUpdated) {
+                                                        Toast.makeText(context, "تم تعيين هذا العنوان كافتراضي للمستودعات", Toast.LENGTH_SHORT).show()
+                                                    }
                                                     loadAddresses()
                                                 }
                                             } else {

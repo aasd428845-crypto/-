@@ -482,34 +482,34 @@ data class OrderRouting(
 
 @Serializable
 data class ClientProfile(
-    val clientId: String = "",
-    val userId: String = "",
-    val institutionName: String = "",
-    val clientType: String = "", // hospital / pharmacy
-    val responsiblePerson: String = "",
+    @SerialName("client_id")        val clientId: String = "",
+    @SerialName("user_id")          val userId: String = "",
+    @SerialName("institution_name") val institutionName: String = "",
+    @SerialName("client_type")      val clientType: String = "", // hospital / pharmacy
+    @SerialName("responsible_person") val responsiblePerson: String = "",
     val phone: String = "",
-    val alternatePhone: String = "",
-    val licenseNumber: String = "",
-    val licenseImageUrl: String = "",
+    @SerialName("alternate_phone")  val alternatePhone: String = "",
+    @SerialName("license_number")   val licenseNumber: String = "",
+    @SerialName("license_image_url") val licenseImageUrl: String = "",
     val governorate: String = "",
     val city: String = "",
     val district: String = "",
     val neighborhood: String = "",
     val landmark: String = "",
-    val fullAddress: String = "",
+    @SerialName("full_address")     val fullAddress: String = "",
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
-    val assignedBranchId: String = "",
-    val assignedBranchName: String = "",
-    val preferredPayment: String = "",
-    val paymentAccount: String = "",
-    val isVerified: Boolean = false,
-    val isActive: Boolean = true,
-    val profileCompleted: Boolean = false,
-    val joinedAt: Long = 0L,
-    val lastOrderAt: Long = 0L,
-    val totalOrders: Int = 0,
-    val totalSpent: Double = 0.0
+    @SerialName("assigned_branch_id")   val assignedBranchId: String = "",
+    @SerialName("assigned_branch_name") val assignedBranchName: String = "",
+    @SerialName("preferred_payment") val preferredPayment: String = "",
+    @SerialName("payment_account")  val paymentAccount: String = "",
+    @SerialName("is_verified")      val isVerified: Boolean = false,
+    @SerialName("is_active")        val isActive: Boolean = true,
+    @SerialName("profile_completed") val profileCompleted: Boolean = false,
+    @SerialName("joined_at")        val joinedAt: Long = 0L,
+    @SerialName("last_order_at")    val lastOrderAt: Long = 0L,
+    @SerialName("total_orders")     val totalOrders: Int = 0,
+    @SerialName("total_spent")      val totalSpent: Double = 0.0
 )
 
 @Serializable

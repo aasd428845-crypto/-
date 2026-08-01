@@ -154,41 +154,47 @@ object FirebaseService {
         }
     }
 
-    fun saveAddress(address: UserAddress, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
-        val id = if (address.addressId.isEmpty()) java.util.UUID.randomUUID().toString() else address.addressId
-        val finalAddr = address.copy(addressId = id, createdAt = System.currentTimeMillis())
+    /**
+     * دالة موحدة لحفظ أو تحديث العنوان.
+     * - إذا كان addressId فارغاً → إدراج جديد (تولّد القاعدة المعرف تلقائياً).
+     * - إذا كان مملوءاً → upsert (تحديث السجل الموجود).
+     * - لا تُظهر "تم الحفظ" إلا داخل onResult(true, …) الفعلي.
+     */
+    fun saveAddress(address: UserAddress, onResult: (Boolean, String?) -> Unit) {
+        val isNew = address.addressId.isEmpty()
+        val finalAddr = if (isNew) address.copy(createdAt = System.currentTimeMillis()) else address
 
         scope.launch {
             try {
-                if (finalAddr.isDefault) {
-                    try {
-                        SupabaseClientProvider.client.postgrest["addresses"]
-                            .update({
-                                set("is_default", false)
-                            }) {
-                                filter {
-                                    eq("user_id", finalAddr.userId)
+                withContext(Dispatchers.IO) {
+                    if (finalAddr.isDefault) {
+                        try {
+                            SupabaseClientProvider.client.postgrest["addresses"]
+                                .update({ set("is_default", false) }) {
+                                    filter { eq("user_id", finalAddr.userId) }
                                 }
-                            }
-                    } catch (ex: Exception) {
-                        Log.e("SUPABASE_DEBUG", "saveAddress resetting defaults warning: ${ex.message}")
+                        } catch (ex: Exception) {
+                            Log.e("SUPABASE_DEBUG", "saveAddress resetting defaults warning: ${ex.message}")
+                        }
                     }
+                    SupabaseClientProvider.client.postgrest["addresses"].upsert(finalAddr)
                 }
-
-                SupabaseClientProvider.client.postgrest["addresses"].upsert(finalAddr)
-
-                withContext(Dispatchers.Main) {
-                    onSuccess()
-                }
+                withContext(Dispatchers.Main) { onResult(true, null) }
             } catch (e: Exception) {
-                Log.e("SUPABASE_DEBUG", "saveAddress failed: ${e.message} | ${e.stackTraceToString()}")
+                Log.e("SUPABASE_DEBUG", "saveAddress failed: ${e.message}")
                 lastDatabaseError = "saveAddress: ${e.message}"
-                withContext(Dispatchers.Main) {
-                    onFailure("خطأ في حفظ العنوان: ${e.message}")
-                }
+                withContext(Dispatchers.Main) { onResult(false, e.message) }
             }
         }
     }
+
+    /** توافق رجعي — يُفوّض للدالة الموحدة saveAddress */
+    fun addUserAddress(address: UserAddress, onResult: (Boolean, String?) -> Unit) =
+        saveAddress(address, onResult)
+
+    /** توافق رجعي — يُفوّض للدالة الموحدة saveAddress */
+    fun updateUserAddress(address: UserAddress, onResult: (Boolean) -> Unit) =
+        saveAddress(address) { ok, _ -> onResult(ok) }
 
     fun setDefaultAddress(userId: String, addressId: String, onResult: (Boolean) -> Unit) {
         scope.launch {
@@ -216,74 +222,6 @@ object FirebaseService {
                 }
             } catch (e: Exception) {
                 Log.e("SUPABASE_DEBUG", "setDefaultAddress failed: ${e.message} | ${e.stackTraceToString()}")
-                withContext(Dispatchers.Main) {
-                    onResult(false)
-                }
-            }
-        }
-    }
-
-    fun addUserAddress(address: UserAddress, onResult: (Boolean, String?) -> Unit) {
-        val id = if (address.addressId.isEmpty()) java.util.UUID.randomUUID().toString() else address.addressId
-        val finalAddr = address.copy(addressId = id, createdAt = System.currentTimeMillis())
-
-        scope.launch {
-            try {
-                if (finalAddr.isDefault) {
-                    try {
-                        SupabaseClientProvider.client.postgrest["addresses"]
-                            .update({
-                                set("is_default", false)
-                            }) {
-                                filter {
-                                    eq("user_id", finalAddr.userId)
-                                }
-                            }
-                    } catch (ex: Exception) {
-                        Log.e("SUPABASE_DEBUG", "addUserAddress resetting defaults warning: ${ex.message}")
-                    }
-                }
-
-                SupabaseClientProvider.client.postgrest["addresses"].upsert(finalAddr)
-
-                withContext(Dispatchers.Main) {
-                    onResult(true, id)
-                }
-            } catch (e: Exception) {
-                Log.e("SUPABASE_DEBUG", "addUserAddress failed: ${e.message} | ${e.stackTraceToString()}")
-                lastDatabaseError = "addUserAddress: ${e.message}"
-                withContext(Dispatchers.Main) {
-                    onResult(false, "خطأ في إضافة العنوان: ${e.message}")
-                }
-            }
-        }
-    }
-
-    fun updateUserAddress(address: UserAddress, onResult: (Boolean) -> Unit) {
-        scope.launch {
-            try {
-                if (address.isDefault) {
-                    try {
-                        SupabaseClientProvider.client.postgrest["addresses"]
-                            .update({
-                                set("is_default", false)
-                            }) {
-                                filter {
-                                    eq("user_id", address.userId)
-                                }
-                            }
-                    } catch (ex: Exception) {
-                        Log.e("SUPABASE_DEBUG", "updateUserAddress resetting defaults warning: ${ex.message}")
-                    }
-                }
-
-                SupabaseClientProvider.client.postgrest["addresses"].upsert(address)
-
-                withContext(Dispatchers.Main) {
-                    onResult(true)
-                }
-            } catch (e: Exception) {
-                Log.e("SUPABASE_DEBUG", "updateUserAddress failed: ${e.message} | ${e.stackTraceToString()}")
                 withContext(Dispatchers.Main) {
                     onResult(false)
                 }
