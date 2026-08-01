@@ -28,13 +28,13 @@ import androidx.compose.ui.unit.sp
 import com.example.model.*
 import com.example.service.FirebaseService
 import com.example.service.SupabaseClientProvider
+import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.launch
 import com.example.ui.theme.MedBluePrimary
 import com.example.ui.theme.MedGreenPrimary
 import com.example.ui.theme.MedRedPrimary
 import com.example.ui.screens.AuthScreen
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.gotrue.auth
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
