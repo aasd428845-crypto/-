@@ -499,7 +499,7 @@ fun AddAddressScreen(
                     ) { /* تجاهل الخطأ — العنوان هو الأهم */ }
 
                     if (existingAddress != null) {
-                        FirebaseService.updateUserAddress(targetAddress) { success ->
+                        FirebaseService.saveAddress(targetAddress) { success, _ ->
                             if (success) {
                                 Toast.makeText(context, "تم تحديث العنوان بنجاح! 🎊 ✔", Toast.LENGTH_SHORT).show()
                                 onSaveSuccess()
@@ -508,7 +508,7 @@ fun AddAddressScreen(
                             }
                         }
                     } else {
-                        FirebaseService.addUserAddress(targetAddress) { success, error ->
+                        FirebaseService.saveAddress(targetAddress) { success, error ->
                             if (success) {
                                 if (currentUser.role == "branch_manager") {
                                     val notification = DirectorNotification(

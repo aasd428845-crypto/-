@@ -346,24 +346,24 @@ data class ClientAccount(
  */
 @Serializable
 data class PriceOffer(
-    val priceOfferId: String = "",
-    val broadcastId: String = "",
-    val supplierId: String = "",
-    val supplierName: String = "",
-    val medicineId: String = "",
-    val medicineName: String = "",
+    @SerialName("price_offer_id")       val priceOfferId: String = "",
+    @SerialName("broadcast_id")         val broadcastId: String = "",
+    @SerialName("supplier_id")          val supplierId: String = "",
+    @SerialName("supplier_name")        val supplierName: String = "",
+    @SerialName("medicine_id")          val medicineId: String = "",
+    @SerialName("medicine_name")        val medicineName: String = "",
     val price: Double = 0.0,
     val quantity: Int = 0,
-    val shippingCost: Double = 0.0,
+    @SerialName("shipping_cost")        val shippingCost: Double = 0.0,
     val notes: String = "",
     val status: String = "pending", // pending, accepted, rejected, negotiating
-    val deliveryAddressId: String = "",
-    val deliveryAddressLabel: String = "",
-    val deliveryFullAddress: String = "",
+    @SerialName("delivery_address_id")  val deliveryAddressId: String = "",
+    @SerialName("delivery_address_label") val deliveryAddressLabel: String = "",
+    @SerialName("delivery_full_address") val deliveryFullAddress: String = "",
     val distance: Double = 0.0,
     val eta: String = "",
-    val deliveryMethod: String = "", // "self" or "platform"
-    val createdAt: Long = 0L
+    @SerialName("delivery_method")      val deliveryMethod: String = "", // "self" or "platform"
+    @SerialName("created_at")           val createdAt: Long = 0L
 )
 
 /**
@@ -396,35 +396,35 @@ data class BranchOffer(
 
 @Serializable
 data class Payment(
-    val paymentId: String = "",
-    val orderId: String = "",
-    val hospitalId: String = "",
-    val hospitalName: String = "",
-    val supplierId: String = "",
-    val supplierName: String = "",
+    @SerialName("payment_id")           val paymentId: String = "",
+    @SerialName("order_id")             val orderId: String = "",
+    @SerialName("hospital_id")          val hospitalId: String = "",
+    @SerialName("hospital_name")        val hospitalName: String = "",
+    @SerialName("supplier_id")          val supplierId: String = "",
+    @SerialName("supplier_name")        val supplierName: String = "",
     val amount: Double = 0.0,
     val currency: String = "YER", // YER or USD
-    val paymentMethod: String = "", // e.g. "البنك الكريمي", "كاش يمن موبايل"
-    val receiptUrl: String = "", // إيصال التحويل المالي أو صورة السداد
-    val receiptNote: String = "",
+    @SerialName("payment_method")       val paymentMethod: String = "", // e.g. "البنك الكريمي", "كاش يمن موبايل"
+    @SerialName("receipt_url")          val receiptUrl: String = "", // إيصال التحويل المالي أو صورة السداد
+    @SerialName("receipt_note")         val receiptNote: String = "",
     val status: String = "pending", // pending, confirmed, rejected
-    val adminVisible: Boolean = true,
-    val commissionAmount: Double = 0.0,
-    val commissionRate: Double = 0.05,
-    val commissionStatus: String = "pending"
+    @SerialName("admin_visible")        val adminVisible: Boolean = true,
+    @SerialName("commission_amount")    val commissionAmount: Double = 0.0,
+    @SerialName("commission_rate")      val commissionRate: Double = 0.05,
+    @SerialName("commission_status")    val commissionStatus: String = "pending"
 )
 
 @Serializable
 data class BankAccount(
-    val accountId: String = "",
-    val userId: String = "",
-    val bankName: String = "",
-    val accountNumber: String = "",
-    val accountHolderName: String = "",
-    val walletType: String = "bank", // "bank", "mfs"
-    val walletNumber: String = "",
-    val isDefault: Boolean = false,
-    val createdAt: Long = 0L
+    @SerialName("account_id")           val accountId: String = "",
+    @SerialName("user_id")              val userId: String = "",
+    @SerialName("bank_name")            val bankName: String = "",
+    @SerialName("account_number")       val accountNumber: String = "",
+    @SerialName("account_holder_name")  val accountHolderName: String = "",
+    @SerialName("wallet_type")          val walletType: String = "bank", // "bank", "mfs"
+    @SerialName("wallet_number")        val walletNumber: String = "",
+    @SerialName("is_default")           val isDefault: Boolean = false,
+    @SerialName("created_at")           val createdAt: Long = 0L
 )
 
 
@@ -434,45 +434,45 @@ data class BankAccount(
 
 @Serializable
 data class DeliveryRequest(
-    val deliveryId: String = "",
-    val orderId: String = "",
-    val hospitalId: String = "",
-    val supplierId: String = "",
-    val pickupAddress: String = "",
-    val pickupLat: Double = 15.3482,
-    val pickupLng: Double = 44.2191,
-    val deliveryAddress: String = "",
-    val deliveryLat: Double = 15.3482,
-    val deliveryLng: Double = 44.2191,
+    @SerialName("delivery_id")          val deliveryId: String = "",
+    @SerialName("order_id")             val orderId: String = "",
+    @SerialName("hospital_id")          val hospitalId: String = "",
+    @SerialName("supplier_id")          val supplierId: String = "",
+    @SerialName("pickup_address")       val pickupAddress: String = "",
+    @SerialName("pickup_lat")           val pickupLat: Double = 15.3482,
+    @SerialName("pickup_lng")           val pickupLng: Double = 44.2191,
+    @SerialName("delivery_address")     val deliveryAddress: String = "",
+    @SerialName("delivery_lat")         val deliveryLat: Double = 15.3482,
+    @SerialName("delivery_lng")         val deliveryLng: Double = 44.2191,
     val distance: Double = 0.0,
-    val estimatedPrice: Double = 0.0,
-    val urgencyLevel: String = "normal", // normal, high, critical
-    val packageSize: String = "medium", // small, medium, large
-    val packageImageUrl: String = "",
+    @SerialName("estimated_price")      val estimatedPrice: Double = 0.0,
+    @SerialName("urgency_level")        val urgencyLevel: String = "normal", // normal, high, critical
+    @SerialName("package_size")         val packageSize: String = "medium", // small, medium, large
+    @SerialName("package_image_url")    val packageImageUrl: String = "",
     val status: String = "pending", // pending, assigned, picked, delivered
-    val adminAssigned: Boolean = false,
-    val createdAt: Long = 0L
+    @SerialName("admin_assigned")       val adminAssigned: Boolean = false,
+    @SerialName("created_at")           val createdAt: Long = 0L
 )
 
 @Serializable
 data class DeliverySchedule(
-    val scheduleId: String = "",
-    val orderId: String = "",
-    val supplierAvailableTimes: List<String> = emptyList(),
-    val hospitalPreferredTimes: List<String> = emptyList(),
-    val agreedDateTime: String = "",
+    @SerialName("schedule_id")              val scheduleId: String = "",
+    @SerialName("order_id")                 val orderId: String = "",
+    @SerialName("supplier_available_times") val supplierAvailableTimes: List<String> = emptyList(),
+    @SerialName("hospital_preferred_times") val hospitalPreferredTimes: List<String> = emptyList(),
+    @SerialName("agreed_date_time")         val agreedDateTime: String = "",
     val status: String = "negotiating", // negotiating, agreed
-    val updatedAt: Long = 0L
+    @SerialName("updated_at")               val updatedAt: Long = 0L
 )
 
 @Serializable
 data class OrderRouting(
-    val orderId: String = "",
-    val clientId: String = "",
-    val targetBranches: List<String> = emptyList(),
-    val routingType: String = "", // "all", "nearby", "selected"
-    val routingReason: String = "",
-    val createdAt: Long = 0L
+    @SerialName("order_id")         val orderId: String = "",
+    @SerialName("client_id")        val clientId: String = "",
+    @SerialName("target_branches")  val targetBranches: List<String> = emptyList(),
+    @SerialName("routing_type")     val routingType: String = "", // "all", "nearby", "selected"
+    @SerialName("routing_reason")   val routingReason: String = "",
+    @SerialName("created_at")       val createdAt: Long = 0L
 )
 
 
@@ -514,15 +514,15 @@ data class ClientProfile(
 
 @Serializable
 data class BranchManagerProfile(
-    val userId: String = "",
-    val fullName: String = "",
+    @SerialName("user_id")                  val userId: String = "",
+    @SerialName("full_name")                val fullName: String = "",
     val phone: String = "",
-    val nationalIdImageUrl: String = "",
-    val warehouseLat: Double = 0.0,
-    val warehouseLng: Double = 0.0,
-    val bankAccounts: List<BankAccount> = emptyList(),
-    val profileCompleted: Boolean = false,
-    val joinedAt: Long = 0L
+    @SerialName("national_id_image_url")    val nationalIdImageUrl: String = "",
+    @SerialName("warehouse_lat")            val warehouseLat: Double = 0.0,
+    @SerialName("warehouse_lng")            val warehouseLng: Double = 0.0,
+    @SerialName("bank_accounts")            val bankAccounts: List<BankAccount> = emptyList(),
+    @SerialName("profile_completed")        val profileCompleted: Boolean = false,
+    @SerialName("joined_at")                val joinedAt: Long = 0L
 )
 
 
@@ -532,13 +532,13 @@ data class BranchManagerProfile(
 
 @Serializable
 data class DirectorNotification(
-    val notificationId: String = "",
+    @SerialName("notification_id")  val notificationId: String = "",
     val title: String = "",
     val message: String = "",
-    val orderId: String = "",
-    val clientId: String = "",
-    val clientName: String = "",
-    val createdAt: Long = 0L,
+    @SerialName("order_id")         val orderId: String = "",
+    @SerialName("client_id")        val clientId: String = "",
+    @SerialName("client_name")      val clientName: String = "",
+    @SerialName("created_at")       val createdAt: Long = 0L,
     val read: Boolean = false
 )
 

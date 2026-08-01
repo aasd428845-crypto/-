@@ -216,7 +216,7 @@ fun DeliveryScheduleScreen(
                                 if (customSlotInput.isNotBlank()) {
                                     supplierSlots = supplierSlots + customSlotInput
                                     customSlotInput = ""
-                                    Toast.makeText(context, "تم حفظ خانة الموعد المتاح كـ مورد!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "تمت إضافة الموعد للقائمة", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = MedBluePrimary, contentColor = Color.White),
@@ -288,7 +288,7 @@ fun DeliveryScheduleScreen(
                                 if (customSlotInput.isNotBlank()) {
                                     hospitalSlots = hospitalSlots + customSlotInput
                                     customSlotInput = ""
-                                    Toast.makeText(context, "تم حفظ تفضيل الموعد كـ مستشفى!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "تمت إضافة الموعد للقائمة", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary),

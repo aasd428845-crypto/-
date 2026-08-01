@@ -1,0 +1,32 @@
+مهمة حرجة بثلاثة أجزاء:
+
+الجزء 1: أضف @Serializable لنموذج ClientProfile في DataModels.kt، مع @SerialName صريح لكل حقل يطابق أسماء أعمدة snake_case بالضبط:
+clientId → client_id, userId → user_id, institutionName → institution_name, clientType → client_type, responsiblePerson → responsible_person, alternatePhone → alternate_phone, licenseNumber → license_number, licenseImageUrl → license_image_url, fullAddress → full_address, assignedBranchId → assigned_branch_id, assignedBranchName → assigned_branch_name, preferredPayment → preferred_payment, paymentAccount → payment_account, isVerified → is_verified, isActive → is_active, profileCompleted → profile_completed, joinedAt → joined_at, lastOrderAt → last_order_at, totalOrders → total_orders, totalSpent → total_spent. (governorate, city, district, neighborhood, landmark, latitude, longitude تبقى بنفس الاسم لأنها متطابقة أصلاً).
+
+طبّق فحصاً شاملاً: هل يوجد أي data class آخر بالمشروع يمثّل جدول Supabase وليس معلَّماً بـ@Serializable/@SerialName بشكل صحيح؟ اذكر لي كل واحد وجدته.
+
+الجزء 2: توحيد منطق إضافة/تعديل العنوان في مكان واحد فقط
+حالياً منطق العناوين مكرر ومتضارب عبر 8 ملفات (AddAddressScreen, BranchAddressSetupScreen, BranchAddressesScreen, ClientAddressesScreen, وغيرها). أنشئ دالة واحدة موحدة في FirebaseService.kt:
+
+fun saveAddress(address: UserAddress, onResult: (Boolean, String?) -> Unit) {
+    scope.launch {
+        try {
+            withContext(Dispatchers.IO) {
+                SupabaseClientProvider.client.postgrest["addresses"].insert(address)
+                // لا تحدد id يدوياً إطلاقاً - اترك القاعدة تولّده
+            }
+            withContext(Dispatchers.Main) { onResult(true, null) }
+        } catch (e: Exception) {
+            Log.e("SUPABASE_DEBUG", "saveAddress failed: ${e.message}")
+            withContext(Dispatchers.Main) { onResult(false, e.message) }
+            // لا تعرض "تم الحفظ" عند الفشل تحت أي ظرف
+        }
+    }
+}
+
+عدّل كل الشاشات الثمانية لتستدعي هذه الدالة الموحدة فقط بدل أي منطق حفظ عنوان مكتوب داخلها مباشرة أو منسوخ من ملف آخر. احذف أي تعيين يدوي لـ id بصيغة "addr_" + timestamp في كل هذه الملفات.
+
+الجزء 3: تأكيد صارم
+لا تعرض أي رسالة "تم الحفظ بنجاح" في أي مكان بالمشروع إلا داخل onResult(true, ...) الفعلي القادم من قاعدة البيانات. ابحث عن أي Toast "تم الحفظ" غير مشروط بنتيجة حقيقية وأصلحه.
+
+أخبرني بعد التنفيذ: كم شاشة عدّلتها من الثمانية؟ وهل وجدت data classes أخرى ناقصة @Serializable؟

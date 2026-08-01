@@ -522,7 +522,7 @@ fun BranchAddressSetupScreen(
                         )
 
                         // 1. Save Address in Firestore
-                        FirebaseService.addUserAddress(newAddress) { success, _ ->
+                        FirebaseService.saveAddress(newAddress) { success, _ ->
                             if (success) {
                                 // 2. Update branch location
                                 FirebaseService.updateBranchLocation(
