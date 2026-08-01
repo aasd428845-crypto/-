@@ -504,9 +504,8 @@ fun BranchAddressSetupScreen(
                         val fullAddrText = "$selectedGovernorate - $selectedDistrict - $selectedNeighborhood - $detailedDescription"
 
                         // Create address model
-                        val addrId = "addr_" + System.currentTimeMillis()
                         val newAddress = UserAddress(
-                            addressId = addrId,
+                            addressId = "", // تولّده قاعدة البيانات تلقائياً (gen_random_uuid)
                             userId = currentUser.userId,
                             userType = "branch_manager",
                             label = label,
@@ -535,7 +534,7 @@ fun BranchAddressSetupScreen(
                                 ) { branchSuccess ->
                                     // 3. Notify Director
                                     val notification = DirectorNotification(
-                                        notificationId = "notif_" + System.currentTimeMillis(),
+                                        notificationId = java.util.UUID.randomUUID().toString(),
                                         title = "مدير فرع فعّل حسابه",
                                         message = "${currentUser.name} - ${currentUser.branchName} قام بإعداد موقع الفرع وتفعيل حسابه بنجاح",
                                         orderId = "",

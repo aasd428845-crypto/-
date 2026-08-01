@@ -117,7 +117,7 @@ fun ClientProfileSetupScreen(
             modifier = Modifier
                 .padding(paddingVals)
                 .fillMaxSize()
-                .background(Color(0xFF0F172A)) // Aesthetic theme
+                .background(Color(0xFFF8FAFC))
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -206,51 +206,66 @@ fun ClientProfileSetupScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // STEP NAVIGATION CONTROLS
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                if (currentStep > 1) {
-                    Button(
-                        onClick = { currentStep-- },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(50.dp)
-                            .padding(end = 8.dp)
-                            .testTag("setup_back_btn")
-                    ) {
-                        Text("السابق ➡️", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-                }
+            // دالة مساعدة: حفظ البيانات الحالية والخروج للتطبيق فوراً
+            fun skipAndEnterApp() {
+                saveClientProfileData(
+                    userId = userId,
+                    instName = institutionName.ifBlank { "منشأة غير مكتملة" },
+                    clType = clientType,
+                    respPerson = responsiblePerson.ifBlank { "" },
+                    ph = phone.ifBlank { "" },
+                    altPh = alternatePhone,
+                    licNo = licenseNumber,
+                    licImg = "",
+                    gov = selectedGovernorate,
+                    city = selectedCity,
+                    neigh = neighborhood,
+                    land = landmark,
+                    fullAddr = if (fullAddressDesc.isNotEmpty()) fullAddressDesc else "$selectedGovernorate - $selectedCity",
+                    lat = pinLat,
+                    lng = pinLng,
+                    bId = nearestBranchId,
+                    bName = nearestBranchName,
+                    payPref = "كاش",
+                    payAcc = "",
+                    onComplete = onSetupCompleted,
+                    toastContext = context
+                )
+            }
 
-                if (currentStep < 3) {
-                    Button(
-                        onClick = {
-                            if (currentStep == 1) {
-                                if (institutionName.isBlank() || responsiblePerson.isBlank() || phone.isBlank()) {
-                                    Toast.makeText(context, "يرجى ملء جميع الحقول الإلزامية في الخطوة الأولى", Toast.LENGTH_SHORT).show()
-                                    return@Button
-                                }
-                                if (!isLicenseUploaded) {
-                                    Toast.makeText(context, "يرجى النقر لرفع ترخيص وزارة الصحة", Toast.LENGTH_SHORT).show()
-                                    return@Button
-                                }
-                            }
-                            currentStep++
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(50.dp)
-                            .testTag("setup_next_btn")
-                    ) {
-                        Text("التالي ⬅️", color = Color.White, fontWeight = FontWeight.Bold)
+            // STEP NAVIGATION CONTROLS
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    if (currentStep > 1) {
+                        Button(
+                            onClick = { currentStep-- },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp)
+                                .padding(end = 8.dp)
+                                .testTag("setup_back_btn")
+                        ) {
+                            Text("السابق ➡️", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
                     }
-                } else {
-                    // Step 3 Completion / Skip Buttons
-                    Column(modifier = Modifier.weight(1f)) {
+
+                    if (currentStep < 3) {
+                        Button(
+                            onClick = { currentStep++ },
+                            colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp)
+                                .testTag("setup_next_btn")
+                        ) {
+                            Text("التالي ⬅️", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        // Step 3: زر الحفظ الكامل
                         Button(
                             onClick = {
                                 saveClientProfileData(
@@ -279,48 +294,24 @@ fun ClientProfileSetupScreen(
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = MedGreenPrimary),
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .weight(1f)
                                 .height(50.dp)
                                 .testTag("setup_finish_btn")
                         ) {
                             Text("حفظ وإنهاء الملف 🚀", color = Color.White, fontWeight = FontWeight.Bold)
                         }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        TextButton(
-                            onClick = {
-                                saveClientProfileData(
-                                    userId = userId,
-                                    instName = institutionName,
-                                    clType = clientType,
-                                    respPerson = responsiblePerson,
-                                    ph = phone,
-                                    altPh = alternatePhone,
-                                    licNo = licenseNumber,
-                                    licImg = "https://images.unsplash.com/photo-1576091160550-2173dba999ef",
-                                    gov = selectedGovernorate,
-                                    city = selectedCity,
-                                    neigh = neighborhood,
-                                    land = landmark,
-                                    fullAddr = if (fullAddressDesc.isNotEmpty()) fullAddressDesc else "$selectedGovernorate - $selectedCity - $neighborhood",
-                                    lat = pinLat,
-                                    lng = pinLng,
-                                    bId = nearestBranchId,
-                                    bName = nearestBranchName,
-                                    payPref = "كاش",
-                                    payAcc = "",
-                                    onComplete = onSetupCompleted,
-                                    toastContext = context
-                                )
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("setup_skip_step3_btn")
-                        ) {
-                            Text("تخطي هذه الخطوة الآن ↩", color = Color.LightGray, fontSize = 12.sp)
-                        }
                     }
+                }
+
+                // زر "تخطي الآن" متاح في كل خطوة
+                Spacer(modifier = Modifier.height(6.dp))
+                TextButton(
+                    onClick = { skipAndEnterApp() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("setup_skip_btn_step$currentStep")
+                ) {
+                    Text("تخطي الآن، أكمل لاحقاً ⏭️", color = MedBluePrimary, fontSize = 12.sp)
                 }
             }
         }
@@ -351,7 +342,7 @@ private fun saveClientProfileData(
     toastContext: android.content.Context
 ) {
     val newProfile = ClientProfile(
-        clientId = "client_" + System.currentTimeMillis(),
+        clientId = "", // تولّده قاعدة البيانات تلقائياً
         userId = userId,
         institutionName = instName,
         clientType = clType,
@@ -410,7 +401,7 @@ fun StepBubble(step: Int, activeStep: Int, label: String) {
             }
         }
         Spacer(modifier = Modifier.height(4.dp))
-        Text(label, color = if (isActive) MedGreenPrimary else Color.LightGray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = if (isActive) MedGreenPrimary else Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -450,7 +441,7 @@ fun Step1Layout(
         item {
             Text(
                 "معلومات منشأتك الطبية 🏢",
-                color = Color.White,
+                color = Color(0xFF1E293B),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Right,
@@ -458,7 +449,7 @@ fun Step1Layout(
             )
             Text(
                 "هذه البيانات تساعدنا في التحقق السريع من تصاريح منشأتك وربط طلبياتك بشكل دقيق وقانوني.",
-                color = Color.LightGray,
+                color = Color.Gray,
                 fontSize = 11.sp,
                 textAlign = TextAlign.Right,
                 modifier = Modifier
@@ -472,7 +463,7 @@ fun Step1Layout(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                    .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
                     .padding(4.dp)
             ) {
                 Box(
@@ -511,8 +502,6 @@ fun Step1Layout(
                     .fillMaxWidth()
                     .testTag("setup_inst_name_input"),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
                     focusedBorderColor = MedGreenPrimary,
                     unfocusedBorderColor = Color.Gray
                 ),
@@ -530,8 +519,6 @@ fun Step1Layout(
                     .fillMaxWidth()
                     .testTag("setup_resp_person_input"),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
                     focusedBorderColor = MedGreenPrimary,
                     unfocusedBorderColor = Color.Gray
                 ),
@@ -549,8 +536,6 @@ fun Step1Layout(
                     .fillMaxWidth()
                     .testTag("setup_phone_input"),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
                     focusedBorderColor = MedGreenPrimary,
                     unfocusedBorderColor = Color.Gray
                 ),
@@ -565,8 +550,6 @@ fun Step1Layout(
                 label = { Text("رقم هاتف بديل (اختياري)") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
                     focusedBorderColor = MedGreenPrimary,
                     unfocusedBorderColor = Color.Gray
                 ),
@@ -583,8 +566,6 @@ fun Step1Layout(
                     .fillMaxWidth()
                     .testTag("setup_license_input"),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
                     focusedBorderColor = MedGreenPrimary,
                     unfocusedBorderColor = Color.Gray
                 ),
@@ -600,7 +581,7 @@ fun Step1Layout(
                     .height(110.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .border(2.dp, if (isLicenseUploaded) MedGreenPrimary else Color.Gray, RoundedCornerShape(12.dp))
-                    .background(Color.White.copy(alpha = 0.04f))
+                    .background(Color(0xFFF8FAFC))
                     .clickable { onUploadClick() }
                     .testTag("setup_upload_license_btn"),
                 contentAlignment = Alignment.Center
@@ -612,15 +593,15 @@ fun Step1Layout(
                     ) {
                         Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = MedGreenPrimary, modifier = Modifier.size(32.dp))
                         Column {
-                            Text("✅ تم إرفاق صورة السجل / الترخيص بنجاح", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            Text("انقر لتغيير المستند المرفق", color = Color.LightGray, fontSize = 10.sp)
+                            Text("✅ تم إرفاق صورة السجل / الترخيص بنجاح", color = Color(0xFF1E293B), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("انقر لتغيير المستند المرفق", color = Color.Gray, fontSize = 10.sp)
                         }
                     }
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.CloudUpload, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(36.dp))
+                        Icon(Icons.Default.CloudUpload, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(36.dp))
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text("📤 ارفع صورة الترخيص الطبي أو السجل التجاري", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("📤 ارفع صورة الترخيص الطبي أو السجل التجاري", color = Color(0xFF1E293B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         Text("الحد الأقصى للملف 5 ميجابايت (PNG / PDF)", color = Color.Gray, fontSize = 9.sp)
                     }
                 }
@@ -659,7 +640,7 @@ fun Step2Layout(
         item {
             Text(
                 "حدد موقع منشأتك بدقة 📍",
-                color = Color.White,
+                color = Color(0xFF1E293B),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Right,
@@ -667,7 +648,7 @@ fun Step2Layout(
             )
             Text(
                 "تحديد موقعك الجغرافي يربطك بالفرع الأنسب للمجموعة تلقائياً لتسريع التوصيل والحفاظ على جودة الدواء.",
-                color = Color.LightGray,
+                color = Color.Gray,
                 fontSize = 11.sp,
                 textAlign = TextAlign.Right,
                 modifier = Modifier
@@ -697,8 +678,6 @@ fun Step2Layout(
                         .clickable { expandedGov = true }
                         .testTag("dropdown_governorate"),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
                         focusedBorderColor = MedGreenPrimary,
                         unfocusedBorderColor = Color.Gray
                     )
@@ -707,11 +686,11 @@ fun Step2Layout(
                 DropdownMenu(
                     expanded = expandedGov,
                     onDismissRequest = { expandedGov = false },
-                    modifier = Modifier.background(Color(0xFF1E293B))
+                    modifier = Modifier.background(Color.White)
                 ) {
                     governorates.forEach { gov ->
                         DropdownMenuItem(
-                            text = { Text(gov, color = Color.White) },
+                            text = { Text(gov, color = Color(0xFF1E293B)) },
                             onClick = {
                                 onGovChange(gov)
                                 expandedGov = false
@@ -743,8 +722,6 @@ fun Step2Layout(
                         .clickable { expandedCity = true }
                         .testTag("dropdown_city"),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
                         focusedBorderColor = MedGreenPrimary,
                         unfocusedBorderColor = Color.Gray
                     )
@@ -753,11 +730,11 @@ fun Step2Layout(
                 DropdownMenu(
                     expanded = expandedCity,
                     onDismissRequest = { expandedCity = false },
-                    modifier = Modifier.background(Color(0xFF1E293B))
+                    modifier = Modifier.background(Color.White)
                 ) {
                     cities.forEach { city ->
                         DropdownMenuItem(
-                            text = { Text(city, color = Color.White) },
+                            text = { Text(city, color = Color(0xFF1E293B)) },
                             onClick = {
                                 onCityChange(city)
                                 expandedCity = false
@@ -775,8 +752,6 @@ fun Step2Layout(
                 label = { Text("الحي / المنطقة") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
                     focusedBorderColor = MedGreenPrimary,
                     unfocusedBorderColor = Color.Gray
                 ),
@@ -792,8 +767,6 @@ fun Step2Layout(
                 placeholder = { Text("مثال: بجانب مستشفى الثورة / خلف مدرسة النور") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
                     focusedBorderColor = MedGreenPrimary,
                     unfocusedBorderColor = Color.Gray
                 ),
@@ -808,8 +781,6 @@ fun Step2Layout(
                 label = { Text("وصف تفصيلي كامل للعنوان") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
                     focusedBorderColor = MedGreenPrimary,
                     unfocusedBorderColor = Color.Gray
                 )
@@ -820,7 +791,7 @@ fun Step2Layout(
         item {
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
@@ -835,7 +806,7 @@ fun Step2Layout(
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("خريطة التغطية الجغرافية 🗺️", color = Color.LightGray, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text("خريطة التغطية الجغرافية 🗺️", color = Color.DarkGray, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             Text("GPS المحاكي", color = MedGreenPrimary, fontSize = 10.sp)
                         }
 
@@ -844,13 +815,13 @@ fun Step2Layout(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(110.dp)
-                                .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp)),
+                                .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.Place, contentDescription = null, tint = MedRedPrimary, modifier = Modifier.size(36.dp))
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text("إحداثيات منشأتك المعتمدة:", color = Color.White, fontSize = 10.sp)
+                                Text("إحداثيات منشأتك المعتمدة:", color = Color.DarkGray, fontSize = 10.sp)
                                 Text("Lat: ${String.format("%.4f", pinLat)}, Lng: ${String.format("%.4f", pinLng)}", color = MedGreenPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
@@ -891,17 +862,17 @@ fun Step2Layout(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(Icons.Default.AltRoute, contentDescription = null, tint = MedGreenPrimary)
-                        Text("الربط الجغرافي الذكي المخصص ⚡", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("الربط الجغرافي الذكي المخصص ⚡", color = Color(0xFF1E293B), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = "تم تحديد موقعك في محافظة ($selectedGovernorate)",
-                        color = Color.LightGray,
-                        fontSize = 11.sp,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "أقرب فرع لك: $nearestBranchName - على بُعد (${String.format("%.1f", nearestBranchDistance)}) كم",
+                        color = Color.Gray,
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "أقرب فرع لك: $nearestBranchName - على بُعد (${String.format("%.1f", nearestBranchDistance)}) كم",
                         color = MedGreenPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
@@ -928,7 +899,7 @@ fun Step3Layout(
     ) {
         Text(
             "إعدادات الحساب وطريقة الدفع 💳 (اختياري)",
-            color = Color.White,
+        color = Color(0xFF1E293B),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Right,
@@ -936,7 +907,7 @@ fun Step3Layout(
         )
         Text(
             "حدد طريقة الدفع المفضلة لديك لتسريع مطابقة طلبات الشراء والعروض المقدمة لك من الفروع المختلفة.",
-            color = Color.LightGray,
+        color = Color.Gray,
             fontSize = 11.sp,
             textAlign = TextAlign.Right,
             modifier = Modifier.fillMaxWidth()
@@ -944,7 +915,7 @@ fun Step3Layout(
 
         Card(
             shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -969,7 +940,7 @@ fun Step3Layout(
                             onClick = { onPaymentChange(option) },
                             colors = RadioButtonDefaults.colors(selectedColor = MedGreenPrimary, unselectedColor = Color.Gray)
                         )
-                        Text(option, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(option, color = Color(0xFF1E293B), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }
@@ -985,8 +956,6 @@ fun Step3Layout(
                     .fillMaxWidth()
                     .testTag("setup_payment_account_input"),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
                     focusedBorderColor = MedGreenPrimary,
                     unfocusedBorderColor = Color.Gray
                 ),

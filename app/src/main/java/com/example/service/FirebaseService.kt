@@ -1093,7 +1093,7 @@ object FirebaseService {
 
     fun setupClientProfile(profile: ClientProfile, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         val finalProfile = profile.copy(
-            clientId = if (profile.clientId.isEmpty()) "client_" + System.currentTimeMillis() else profile.clientId,
+            clientId = if (profile.clientId.isEmpty()) java.util.UUID.randomUUID().toString() else profile.clientId,
             joinedAt = System.currentTimeMillis(),
             profileCompleted = true
         )
@@ -1121,7 +1121,7 @@ object FirebaseService {
 
                 try {
                     val notification = DirectorNotification(
-                        notificationId = "notif_" + System.currentTimeMillis(),
+                        notificationId = java.util.UUID.randomUUID().toString(),
                         title = "انضمام عميل جديد",
                         message = "انضم عميل جديد: ${finalProfile.institutionName} في محافظة ${finalProfile.governorate}",
                         clientId = finalProfile.clientId,
@@ -1248,7 +1248,7 @@ object FirebaseService {
 
                 try {
                     val notification = DirectorNotification(
-                        notificationId = "notif_" + System.currentTimeMillis(),
+                        notificationId = java.util.UUID.randomUUID().toString(),
                         title = "طلب جديد موجه",
                         message = "تم إنشاء طلب جديد برقم ${finalOrder.orderId} من العميل ${finalOrder.clientName} وموجه لـ ${targetBranchIds.size} فرع.",
                         orderId = finalOrder.orderId,
@@ -1278,7 +1278,7 @@ object FirebaseService {
             try {
                 val finalNotification = if (notification.notificationId.isEmpty()) {
                     notification.copy(
-                        notificationId = "notif_" + System.currentTimeMillis(),
+                        notificationId = java.util.UUID.randomUUID().toString(),
                         createdAt = System.currentTimeMillis()
                     )
                 } else {
@@ -1426,7 +1426,7 @@ object FirebaseService {
             try {
                 val finalNotification = if (notification.notificationId.isEmpty()) {
                     notification.copy(
-                        notificationId = "notif_" + System.currentTimeMillis(),
+                        notificationId = java.util.UUID.randomUUID().toString(),
                         createdAt = System.currentTimeMillis()
                     )
                 } else {
